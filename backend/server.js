@@ -11,6 +11,10 @@ import reportsRoutes from "./src/routes/reports.js";
 import { autoMigrate } from "./src/utils/database.js";
 import errorHandler from "./src/middleware/errorHandler.js";
 
+console.log("Loading labor routes...");
+console.log("Labor routes type:", typeof laborRoutes);
+console.log("Labor routes default:", typeof laborRoutes.default);
+
 const app = express();
 
 app.use(express.json());

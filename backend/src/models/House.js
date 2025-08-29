@@ -7,9 +7,24 @@ const House = sequelize.define("House", {
     autoIncrement: true,
     primaryKey: true,
   },
-  name: {
-    type: DataTypes.STRING,
+  houseName: {
+    type: DataTypes.STRING(50),
     allowNull: false,
+    defaultValue: 'Unnamed House',
+  },
+  capacity: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1000,
+  },
+  currentBirdCount: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  },
+  location: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
   },
   description: {
     type: DataTypes.TEXT,

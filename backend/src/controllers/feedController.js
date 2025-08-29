@@ -7,7 +7,7 @@ const feedController = {
   createRecipe: async (req, res, next) => {
     try {
       const recipe = await feedRecipeService.createFeedRecipe(req.body);
-      res.status(201).json(recipe);
+      res.status(201).json({ success: true, data: recipe });
     } catch (err) {
       next(err);
     }
@@ -16,7 +16,7 @@ const feedController = {
   getAllRecipes: async (req, res, next) => {
     try {
       const recipes = await feedRecipeService.getAllFeedRecipes(req.query);
-      res.json(recipes);
+      res.json({ success: true, data: recipes });
     } catch (err) {
       next(err);
     }
@@ -25,7 +25,7 @@ const feedController = {
   getRecipeById: async (req, res, next) => {
     try {
       const recipe = await feedRecipeService.getFeedRecipeById(req.params.id);
-      res.json(recipe);
+      res.json({ success: true, data: recipe });
     } catch (err) {
       next(err);
     }
@@ -37,7 +37,7 @@ const feedController = {
         req.params.id,
         req.body
       );
-      res.json(updated);
+      res.json({ success: true, data: updated });
     } catch (err) {
       next(err);
     }
@@ -56,7 +56,7 @@ const feedController = {
   createBatch: async (req, res, next) => {
     try {
       const batch = await feedBatchService.createFeedBatch(req.body);
-      res.status(201).json(batch);
+      res.status(201).json({ success: true, data: batch });
     } catch (err) {
       next(err);
     }
@@ -65,7 +65,7 @@ const feedController = {
   getAllBatches: async (req, res, next) => {
     try {
       const batches = await feedBatchService.getAllFeedBatches(req.query);
-      res.json(batches);
+      res.json({ success: true, data: batches });
     } catch (err) {
       next(err);
     }
@@ -74,7 +74,7 @@ const feedController = {
   getBatchById: async (req, res, next) => {
     try {
       const batch = await feedBatchService.getFeedBatchById(req.params.id);
-      res.json(batch);
+      res.json({ success: true, data: batch });
     } catch (err) {
       next(err);
     }
@@ -86,7 +86,7 @@ const feedController = {
         req.params.id,
         req.body
       );
-      res.status(201).json(ingredient);
+      res.status(201).json({ success: true, data: ingredient });
     } catch (err) {
       next(err);
     }
@@ -97,7 +97,7 @@ const feedController = {
       const ingredients = await feedBatchService.getBatchIngredients(
         req.params.id
       );
-      res.json(ingredients);
+      res.json({ success: true, data: ingredients });
     } catch (err) {
       next(err);
     }

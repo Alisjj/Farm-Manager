@@ -16,7 +16,8 @@ describe("laborService.generatePayrollForMonth", () => {
   test("generates payroll with full attendance (netPay equals base salary)", async () => {
     // create laborer
     const laborer = await LaborerModel.create({
-      name: "Test Laborer",
+      fullName: "Test Laborer",
+      position: "General Laborer",
       monthlySalary: 1000,
     });
 
@@ -41,8 +42,8 @@ describe("laborService.generatePayrollForMonth", () => {
     // find payroll for our laborer
     const p = result.find((r) => r.laborerId === laborer.id);
     expect(p).toBeDefined();
-    expect(Number(p.grossPay)).toBeCloseTo(1000);
-    expect(Number(p.netPay)).toBeCloseTo(1000);
+    expect(Number(p.baseSalary)).toBeCloseTo(1000);
+    expect(Number(p.finalSalary)).toBeCloseTo(1000);
 
     // cleanup
     await PayrollModel.destroy({ where: { laborerId: laborer.id } });

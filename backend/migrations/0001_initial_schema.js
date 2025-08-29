@@ -37,6 +37,8 @@ module.exports = {
         allowNull: false,
         defaultValue: 0,
       },
+      location: { type: Sequelize.STRING(100) },
+      description: { type: Sequelize.TEXT },
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,
@@ -48,7 +50,7 @@ module.exports = {
     await queryInterface.createTable("daily_logs", {
       id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
       log_date: { type: Sequelize.DATEONLY, allowNull: false },
-      house_id: { type: Sequelize.INTEGER },
+      house_id: { type: Sequelize.INTEGER, allowNull: false },
       eggs_total: {
         type: Sequelize.INTEGER,
         allowNull: false,
@@ -112,7 +114,7 @@ module.exports = {
     await queryInterface.createTable("sales", {
       id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
       sale_date: { type: Sequelize.DATEONLY, allowNull: false },
-      customer_id: { type: Sequelize.INTEGER },
+      customer_id: { type: Sequelize.INTEGER, allowNull: false },
       grade_a_qty: { type: Sequelize.INTEGER, defaultValue: 0 },
       grade_a_price: { type: Sequelize.DECIMAL(8, 2), defaultValue: 0 },
       grade_b_qty: { type: Sequelize.INTEGER, defaultValue: 0 },
@@ -122,15 +124,14 @@ module.exports = {
       total_amount: {
         type: Sequelize.DECIMAL(10, 2),
         allowNull: false,
-        defaultValue: 0,
       },
       payment_method: {
-        type: Sequelize.STRING(20),
+        type: Sequelize.ENUM("cash", "transfer", "check"),
         allowNull: false,
         defaultValue: "cash",
       },
       payment_status: {
-        type: Sequelize.STRING(20),
+        type: Sequelize.ENUM("paid", "pending"),
         allowNull: false,
         defaultValue: "pending",
       },
@@ -227,15 +228,18 @@ module.exports = {
     await queryInterface.createTable("payrolls", {
       id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
       month_year: { type: Sequelize.STRING(7), allowNull: false },
-      laborer_id: { type: Sequelize.INTEGER },
+      laborer_id: { type: Sequelize.INTEGER, allowNull: false },
       base_salary: { type: Sequelize.DECIMAL(10, 2), allowNull: false },
-      days_worked: { type: Sequelize.INTEGER, defaultValue: 0 },
-      days_absent: { type: Sequelize.INTEGER, defaultValue: 0 },
+      days_worked: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
+      days_absent: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
       salary_deductions: { type: Sequelize.DECIMAL(8, 2), defaultValue: 0 },
       bonus_amount: { type: Sequelize.DECIMAL(8, 2), defaultValue: 0 },
-      final_salary: { type: Sequelize.DECIMAL(10, 2), defaultValue: 0 },
+      final_salary: { type: Sequelize.DECIMAL(10, 2), allowNull: false },
       payment_date: { type: Sequelize.DATEONLY },
-      payment_status: { type: Sequelize.STRING(20), defaultValue: "pending" },
+      payment_status: {
+        type: Sequelize.ENUM("pending", "paid"),
+        defaultValue: "pending"
+      },
       notes: { type: Sequelize.TEXT },
     });
 
@@ -263,9 +267,14 @@ module.exports = {
       cost_per_bird: { type: Sequelize.DECIMAL(8, 2), allowNull: false },
       vaccination_cost_per_bird: {
         type: Sequelize.DECIMAL(8, 2),
+        allowNull: false,
         defaultValue: 0,
       },
-      expected_laying_months: { type: Sequelize.INTEGER, defaultValue: 12 },
+      expected_laying_months: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 12
+      },
     });
 
     // Daily costs

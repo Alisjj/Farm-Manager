@@ -31,6 +31,8 @@ describe("costService helpers", () => {
       eggsGradeA: 10,
       eggsGradeB: 5,
       eggsGradeC: 0,
+      feedGivenKg: 5.5,
+      mortalityCount: 0,
       houseId: house.id,
     });
     await DailyLog.create({
@@ -38,6 +40,8 @@ describe("costService helpers", () => {
       eggsGradeA: 20,
       eggsGradeB: 0,
       eggsGradeC: 0,
+      feedGivenKg: 6.0,
+      mortalityCount: 1,
       houseId: house.id,
     });
     const total = await costService.getAverageMonthlyProduction("2025-07-15");

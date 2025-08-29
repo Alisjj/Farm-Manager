@@ -66,9 +66,9 @@ const costService = {
       return s + a + b + c;
     }, 0);
 
-    // feed cost: sum feedConsumption * estimate price per kg from recent feed batches
+    // feed cost: sum feedGivenKg * estimate price per kg from recent feed batches
     const totalFeedKg = logs.reduce(
-      (s, l) => s + (Number(l.feedConsumption) || 0),
+      (s, l) => s + (Number(l.feedGivenKg) || 0),
       0
     );
 
@@ -103,7 +103,7 @@ const costService = {
       return s + a + b + c;
     }, 0);
     const totalFeedKg = logs.reduce(
-      (s, l) => s + (Number(l.feedConsumption) || 0),
+      (s, l) => s + (Number(l.feedGivenKg) || 0),
       0
     );
 
@@ -127,7 +127,7 @@ const costService = {
         where: { monthYear: monthKey },
       });
       laborSalaries = payrollRows.reduce(
-        (s, p) => s + (Number(p.grossPay) || 0),
+        (s, p) => s + (Number(p.finalSalary) || 0),
         0
       );
     }
@@ -177,7 +177,7 @@ const costService = {
       where: { monthYear: monthKey },
     });
     const monthlyLaborCosts = payrollRows.reduce(
-      (s, p) => s + (Number(p.netPay) || 0),
+      (s, p) => s + (Number(p.finalSalary) || 0),
       0
     );
 
@@ -233,7 +233,12 @@ const costService = {
     // Import BirdCost lazily to avoid circular deps
     let BirdCost;
     try {
-      BirdCost = (await import("../models/BirdCost.js")).default;
+      const { default: BirdCostModel } = await import("../models/BirdCost.js");
+      BirdCost = BirdCostModel;
+      // Test if the model is properly initialized
+      if (!BirdCost || typeof BirdCost.findAll !== 'function') {
+        return 0;
+      }
     } catch (e) {
       // model not present or import failed
       return 0;
@@ -249,7 +254,13 @@ const costService = {
     }, 0);
 
     // Find bird batches whose laying window includes the date
-    const allBatches = await BirdCost.findAll();
+    let allBatches = [];
+    try {
+      allBatches = await BirdCost.findAll();
+    } catch (e) {
+      // Database table might not exist
+      return 0;
+    }
     if (!allBatches || allBatches.length === 0) return 0;
 
     // For each batch, if date is within [batchDate, batchDate + expectedLayingMonths months], include amortized cost
@@ -313,7 +324,7 @@ const costService = {
 
     // Calculate feed cost
     const totalFeedKg = dailyLogs.reduce(
-      (sum, log) => sum + (Number(log.feedConsumption) || 0),
+      (sum, log) => sum + (Number(log.feedGivenKg) || 0),
       0
     );
 

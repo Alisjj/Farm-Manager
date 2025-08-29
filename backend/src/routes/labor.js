@@ -16,25 +16,24 @@ const router = express.Router();
 // Laborers
 router.get(
   "/laborers",
-  handleValidation,
   authenticate,
   authorize(PERMISSIONS.LABORERS.READ),
   laborController.getAll
 );
 router.post(
   "/laborers",
-  validateCreateLaborer,
-  handleValidation,
   authenticate,
   authorize(PERMISSIONS.LABORERS.CREATE),
+  validateCreateLaborer,
+  handleValidation,
   laborController.create
 );
 router.put(
   "/laborers/:id",
-  validateUpdateLaborer,
-  handleValidation,
   authenticate,
   authorize(PERMISSIONS.LABORERS.UPDATE),
+  validateUpdateLaborer,
+  handleValidation,
   laborController.update
 );
 router.delete(
@@ -47,36 +46,53 @@ router.delete(
 // Work assignments
 router.get(
   "/work-assignments",
-  handleValidation,
   authenticate,
   authorize(PERMISSIONS.WORK_ASSIGNMENTS.READ),
   laborController.getAssignments
 );
 router.post(
   "/work-assignments",
-  validateCreateWorkAssignment,
-  handleValidation,
   authenticate,
   authorize(PERMISSIONS.WORK_ASSIGNMENTS.CREATE),
+  validateCreateWorkAssignment,
+  handleValidation,
   laborController.createAssignment
 );
 router.put(
   "/work-assignments/:id",
-  validateUpdateWorkAssignment,
-  handleValidation,
   authenticate,
   authorize(PERMISSIONS.WORK_ASSIGNMENTS.UPDATE),
+  validateUpdateWorkAssignment,
+  handleValidation,
   laborController.updateAssignment
 );
 
-router.get("/payroll/:month_year", laborController.getPayrollMonth);
+// Payroll
+router.get(
+  "/payroll/:month_year",
+  authenticate,
+  authorize(PERMISSIONS.LABORERS.READ),
+  laborController.getPayrollMonth
+);
 router.post(
   "/payroll/generate/:month_year",
+  authenticate,
+  authorize(PERMISSIONS.LABORERS.WRITE),
   validateGeneratePayroll,
   handleValidation,
   laborController.generatePayroll
 );
-router.put("/payroll/:id", laborController.updatePayroll);
-router.get("/payroll/summary", laborController.payrollSummary);
+router.put(
+  "/payroll/:id",
+  authenticate,
+  authorize(PERMISSIONS.LABORERS.WRITE),
+  laborController.updatePayroll
+);
+router.get(
+  "/payroll/summary",
+  authenticate,
+  authorize(PERMISSIONS.LABORERS.READ),
+  laborController.payrollSummary
+);
 
 export default router;

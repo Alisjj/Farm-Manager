@@ -42,7 +42,7 @@ describe("Complete Farm Management Flow", () => {
 
   test("2. Create a house", async () => {
     const res = await auth(request(app).post("/api/houses")).send({
-      name: "Test House 1",
+      houseName: "Test House 1",
       description: "Integration test house",
     });
 
@@ -62,8 +62,8 @@ describe("Complete Farm Management Flow", () => {
     });
 
     expect(res.statusCode).toBe(201);
-    expect(res.body.id).toBeDefined();
-    recipeId = res.body.id;
+    expect(res.body.data.id).toBeDefined();
+    recipeId = res.body.data.id;
   });
 
   test("4. Create a feed batch", async () => {
@@ -76,8 +76,8 @@ describe("Complete Farm Management Flow", () => {
     });
 
     expect(res.statusCode).toBe(201);
-    expect(res.body.id).toBeDefined();
-    batchId = res.body.id;
+    expect(res.body.data.id).toBeDefined();
+    batchId = res.body.data.id;
   });
 
   test("5. Add batch ingredient", async () => {
@@ -90,7 +90,7 @@ describe("Complete Farm Management Flow", () => {
     });
 
     expect(res.statusCode).toBe(201);
-    expect(res.body.id).toBeDefined();
+    expect(res.body.data.id).toBeDefined();
   });
 
   test("6. Create daily log with eggs and feed consumption", async () => {
@@ -100,8 +100,8 @@ describe("Complete Farm Management Flow", () => {
       eggsGradeA: 100,
       eggsGradeB: 20,
       eggsGradeC: 5,
-      feedConsumption: 30.5,
-      mortality: 2,
+      feedGivenKg: 30.5,
+      mortalityCount: 2,
       notes: "Integration test log",
     });
 

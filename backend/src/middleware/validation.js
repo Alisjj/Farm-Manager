@@ -20,14 +20,14 @@ export const validateCreateDailyLog = [
     .optional()
     .isInt({ min: 0 })
     .withMessage("eggsGradeC must be a non-negative integer"),
-  body("feedConsumption")
+  body("feedGivenKg")
     .optional()
     .isFloat({ min: 0 })
-    .withMessage("feedConsumption must be a non-negative number"),
-  body("mortality")
+    .withMessage("feedGivenKg must be a non-negative number"),
+  body("mortalityCount")
     .optional()
     .isInt({ min: 0 })
-    .withMessage("mortality must be a non-negative integer"),
+    .withMessage("mortalityCount must be a non-negative integer"),
   body("notes")
     .optional()
     .isString()
@@ -57,14 +57,14 @@ export const validateUpdateDailyLog = [
     .optional()
     .isInt({ min: 0 })
     .withMessage("eggsGradeC must be a non-negative integer"),
-  body("feedConsumption")
+  body("feedGivenKg")
     .optional()
     .isFloat({ min: 0 })
-    .withMessage("feedConsumption must be a non-negative number"),
-  body("mortality")
+    .withMessage("feedGivenKg must be a non-negative number"),
+  body("mortalityCount")
     .optional()
     .isInt({ min: 0 })
-    .withMessage("mortality must be a non-negative integer"),
+    .withMessage("mortalityCount must be a non-negative integer"),
   body("notes")
     .optional()
     .isString()
@@ -83,69 +83,43 @@ export const validateDailyLogQueries = [
     .withMessage("houseId must be a positive integer"),
 ];
 
-export const validateCreateHouse = [
-  body("name")
-    .notEmpty()
-    .withMessage("House name is required")
-    .isLength({ max: 100 })
-    .withMessage("House name must be max 100 characters"),
-  body("description")
-    .optional()
-    .isString()
-    .isLength({ max: 500 })
-    .withMessage("Description must be a string with max 500 characters"),
-];
+
 
 export const validateCreateCustomer = [
-  body("name")
+  body("customerName")
     .notEmpty()
-    .withMessage("Customer name is required")
-    .isLength({ max: 100 })
-    .withMessage("Name must be max 100 characters"),
+    .withMessage("customerName is required")
+    .isLength({ max: 200 })
+    .withMessage("customerName max 200 chars"),
   body("phone")
     .optional()
-    .isMobilePhone()
-    .withMessage("Phone must be a valid phone number"),
+    .isLength({ max: 20 })
+    .withMessage("phone max 20 chars"),
   body("email")
     .optional()
     .isEmail()
-    .withMessage("Email must be a valid email address"),
+    .withMessage("email must be valid"),
   body("address")
     .optional()
-    .isString()
     .isLength({ max: 500 })
-    .withMessage("Address must be a string with max 500 characters"),
-  body("isActive")
-    .optional()
-    .isBoolean()
-    .withMessage("isActive must be a boolean"),
+    .withMessage("address max 500 chars"),
 ];
 
 export const validateUpdateCustomer = [
   param("id").isInt({ min: 1 }).withMessage("ID must be a positive integer"),
-  body("name")
-    .optional()
-    .notEmpty()
-    .withMessage("Customer name cannot be empty")
-    .isLength({ max: 100 })
-    .withMessage("Name must be max 100 characters"),
+  body("customerName").optional().notEmpty().withMessage("customerName cannot be empty"),
   body("phone")
     .optional()
-    .isMobilePhone()
-    .withMessage("Phone must be a valid phone number"),
+    .isLength({ max: 20 })
+    .withMessage("phone max 20 chars"),
   body("email")
     .optional()
     .isEmail()
-    .withMessage("Email must be a valid email address"),
+    .withMessage("email must be valid"),
   body("address")
     .optional()
-    .isString()
     .isLength({ max: 500 })
-    .withMessage("Address must be a string with max 500 characters"),
-  body("isActive")
-    .optional()
-    .isBoolean()
-    .withMessage("isActive must be a boolean"),
+    .withMessage("address max 500 chars"),
 ];
 
 export const validateCreateSale = [
@@ -319,6 +293,57 @@ export const validateAddBatchIngredient = [
     .withMessage("costPerKg must be a positive number"),
 ];
 
+// House validators
+export const validateCreateHouse = [
+  body("houseName")
+    .notEmpty()
+    .withMessage("houseName is required")
+    .isLength({ max: 50 })
+    .withMessage("houseName max 50 chars"),
+  body("capacity")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("capacity must be a positive integer"),
+  body("currentBirdCount")
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage("currentBirdCount must be non-negative"),
+  body("location")
+    .optional()
+    .isLength({ max: 100 })
+    .withMessage("location max 100 chars"),
+  body("description")
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage("description max 500 chars"),
+];
+
+export const validateUpdateHouse = [
+  param("id").isInt({ min: 1 }).withMessage("ID must be a positive integer"),
+  body("houseName")
+    .optional()
+    .notEmpty()
+    .withMessage("houseName cannot be empty")
+    .isLength({ max: 50 })
+    .withMessage("houseName max 50 chars"),
+  body("capacity")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("capacity must be a positive integer"),
+  body("currentBirdCount")
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage("currentBirdCount must be non-negative"),
+  body("location")
+    .optional()
+    .isLength({ max: 100 })
+    .withMessage("location max 100 chars"),
+  body("description")
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage("description max 500 chars"),
+];
+
 // Helper to run validationResult and return 400 if errors
 export const handleValidation = (req, res, next) => {
   const errors = validationResult(req);
@@ -330,28 +355,88 @@ export const handleValidation = (req, res, next) => {
 
 // Labor validators
 export const validateCreateLaborer = [
-  body("name")
+  body("employeeId")
+    .optional()
+    .isLength({ max: 20 })
+    .withMessage("employeeId max 20 chars"),
+  body("fullName")
     .notEmpty()
-    .withMessage("name is required")
-    .isLength({ max: 200 })
-    .withMessage("name max 200 chars"),
-  body("role").optional().isString(),
+    .withMessage("fullName is required")
+    .isLength({ max: 100 })
+    .withMessage("fullName max 100 chars"),
+  body("phone")
+    .optional()
+    .isLength({ max: 20 })
+    .withMessage("phone max 20 chars"),
+  body("address")
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage("address max 500 chars"),
+  body("position")
+    .notEmpty()
+    .withMessage("position is required")
+    .isLength({ max: 50 })
+    .withMessage("position max 50 chars"),
   body("monthlySalary")
     .optional()
     .isFloat({ min: 0 })
     .withMessage("monthlySalary must be non-negative"),
+  body("hireDate")
+    .optional()
+    .isISO8601()
+    .withMessage("hireDate must be a valid date"),
   body("isActive").optional().isBoolean(),
+  body("emergencyContact")
+    .optional()
+    .isLength({ max: 100 })
+    .withMessage("emergencyContact max 100 chars"),
+  body("emergencyPhone")
+    .optional()
+    .isLength({ max: 20 })
+    .withMessage("emergencyPhone max 20 chars"),
 ];
 
 export const validateUpdateLaborer = [
   param("id").isInt({ min: 1 }).withMessage("ID must be a positive integer"),
-  body("name").optional().notEmpty().withMessage("name cannot be empty"),
-  body("role").optional().isString(),
+  body("employeeId")
+    .optional()
+    .isLength({ max: 20 })
+    .withMessage("employeeId max 20 chars"),
+  body("fullName")
+    .optional()
+    .notEmpty()
+    .withMessage("fullName cannot be empty")
+    .isLength({ max: 100 })
+    .withMessage("fullName max 100 chars"),
+  body("phone")
+    .optional()
+    .isLength({ max: 20 })
+    .withMessage("phone max 20 chars"),
+  body("address")
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage("address max 500 chars"),
+  body("position")
+    .optional()
+    .isLength({ max: 50 })
+    .withMessage("position max 50 chars"),
   body("monthlySalary")
     .optional()
     .isFloat({ min: 0 })
     .withMessage("monthlySalary must be non-negative"),
+  body("hireDate")
+    .optional()
+    .isISO8601()
+    .withMessage("hireDate must be a valid date"),
   body("isActive").optional().isBoolean(),
+  body("emergencyContact")
+    .optional()
+    .isLength({ max: 100 })
+    .withMessage("emergencyContact max 100 chars"),
+  body("emergencyPhone")
+    .optional()
+    .isLength({ max: 20 })
+    .withMessage("emergencyPhone max 20 chars"),
 ];
 
 export const validateCreateWorkAssignment = [
@@ -394,3 +479,7 @@ export const validateGeneratePayroll = [
     .notEmpty()
     .withMessage("month_year is required in format YYYY-MM"),
 ];
+
+
+
+

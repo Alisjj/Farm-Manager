@@ -18,7 +18,7 @@ const authService = {
     }
 
     const accessToken = jwt.sign(
-      { id: user.id, role: user.role },
+      { id: user.id, role: String(user.role).toLowerCase() },
       config.JWT_SECRET,
       {
         expiresIn: config.JWT_EXPIRES_IN,
@@ -26,7 +26,7 @@ const authService = {
     );
 
     const refreshToken = jwt.sign(
-      { id: user.id, role: user.role },
+      { id: user.id, role: String(user.role).toLowerCase() },
       config.JWT_SECRET,
       {
         expiresIn: "7d", // Refresh token valid for 7 days
@@ -44,7 +44,7 @@ const authService = {
     try {
       const payload = jwt.verify(refreshToken, config.JWT_SECRET);
       const newToken = jwt.sign(
-        { id: payload.id, role: payload.role },
+        { id: payload.id, role: String(payload.role).toLowerCase() },
         config.JWT_SECRET,
         {
           expiresIn: config.JWT_EXPIRES_IN,

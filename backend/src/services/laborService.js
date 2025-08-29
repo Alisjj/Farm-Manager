@@ -11,7 +11,7 @@ const laborService = {
   },
 
   createLaborer: async (data) => {
-    if (!data.name) throw new BadRequestError("name is required");
+    if (!data.fullName) throw new BadRequestError("fullName is required");
     return Laborer.create(data);
   },
 
@@ -107,9 +107,13 @@ const laborService = {
       const p = await Payroll.create({
         monthYear: monthKey,
         laborerId: l.id,
-        grossPay: baseSalary,
-        deductions: salaryDeductions,
-        netPay: earnedSalary,
+        baseSalary: baseSalary,
+        daysWorked: daysWorked,
+        daysAbsent: daysAbsent,
+        salaryDeductions: salaryDeductions,
+        bonusAmount: bonusAmount,
+        finalSalary: earnedSalary,
+        paymentStatus: "pending",
       });
       created.push(p);
     }
@@ -134,7 +138,7 @@ const laborService = {
       where: { monthYear: { [Symbol.for("like")]: `${year}-%` } },
     });
     // fallback simple summary
-    const total = rows.reduce((acc, r) => acc + Number(r.netPay || 0), 0);
+    const total = rows.reduce((acc, r) => acc + Number(r.finalSalary || 0), 0);
     return { year, totalPayroll: total };
   },
 };

@@ -13,9 +13,13 @@ const authController = {
       }
 
       const { username, password } = req.body;
-      const token = await authService.login(username, password);
+      const { accessToken, refreshToken } = await authService.login(username, password);
 
-      res.status(200).json({ success: true, token });
+      res.status(200).json({
+        success: true,
+        token: accessToken,
+        refreshToken
+      });
     } catch (error) {
       next(error);
     }

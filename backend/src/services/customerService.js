@@ -3,7 +3,7 @@ import { NotFoundError, BadRequestError } from "../utils/exceptions.js";
 
 const customerService = {
   createCustomer: async (data) => {
-    if (!data.name) {
+    if (!data.customerName) {
       throw new BadRequestError("Customer name is required");
     }
 

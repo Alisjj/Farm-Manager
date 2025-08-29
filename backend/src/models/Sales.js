@@ -15,44 +15,46 @@ const Sales = sequelize.define("Sales", {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  eggsGradeA: {
+  gradeAQty: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
   },
-  eggsGradeB: {
+  gradeAPrice: {
+    type: DataTypes.DECIMAL(8, 2),
+    defaultValue: 0,
+  },
+  gradeBQty: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
   },
-  eggsGradeC: {
+  gradeBPrice: {
+    type: DataTypes.DECIMAL(8, 2),
+    defaultValue: 0,
+  },
+  gradeCQty: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
   },
-  priceGradeA: {
-    type: DataTypes.DECIMAL(10, 2),
-    defaultValue: 0.0,
-  },
-  priceGradeB: {
-    type: DataTypes.DECIMAL(10, 2),
-    defaultValue: 0.0,
-  },
-  priceGradeC: {
-    type: DataTypes.DECIMAL(10, 2),
-    defaultValue: 0.0,
+  gradeCPrice: {
+    type: DataTypes.DECIMAL(8, 2),
+    defaultValue: 0,
   },
   totalAmount: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
   },
   paymentMethod: {
-    type: DataTypes.ENUM("Cash", "Transfer", "Check"),
-    defaultValue: "Cash",
+    type: DataTypes.ENUM("cash", "transfer", "check"),
+    allowNull: false,
+    defaultValue: "cash",
   },
   paymentStatus: {
-    type: DataTypes.ENUM("Paid", "Pending", "Partial"),
-    defaultValue: "Pending",
+    type: DataTypes.ENUM("paid", "pending"),
+    allowNull: false,
+    defaultValue: "pending",
   },
-  notes: {
-    type: DataTypes.TEXT,
+  supervisorId: {
+    type: DataTypes.INTEGER,
     allowNull: true,
   },
 });

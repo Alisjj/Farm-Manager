@@ -5,16 +5,32 @@ import {
   validateUpdateDailyLog,
   validateDailyLogQueries,
   validateId,
+  handleValidation,
 } from "../middleware/validation.js";
 
 const router = express.Router();
 
-router.get("/", validateDailyLogQueries, dailyLogController.getAll);
+router.get(
+  "/",
+  validateDailyLogQueries,
+  handleValidation,
+  dailyLogController.getAll
+);
 
-router.post("/", validateCreateDailyLog, dailyLogController.create);
+router.post(
+  "/",
+  validateCreateDailyLog,
+  handleValidation,
+  dailyLogController.create
+);
 
-router.put("/:id", validateUpdateDailyLog, dailyLogController.update);
+router.put(
+  "/:id",
+  validateUpdateDailyLog,
+  handleValidation,
+  dailyLogController.update
+);
 
-router.delete("/:id", validateId, dailyLogController.delete);
+router.delete("/:id", validateId, handleValidation, dailyLogController.delete);
 
 export default router;

@@ -75,7 +75,7 @@ const reportService = {
         eggsA: l.eggsGradeA,
         eggsB: l.eggsGradeB,
         eggsC: l.eggsGradeC,
-        feedKg: l.feedConsumption,
+        feedKg: l.feedGivenKg,
       }));
     } else if (type === "sales") {
       const r = await reportService.getSalesReport(start, end);
@@ -115,7 +115,7 @@ const reportService = {
         eggsA: l.eggsGradeA,
         eggsB: l.eggsGradeB,
         eggsC: l.eggsGradeC,
-        feedKg: l.feedConsumption,
+        feedKg: l.feedGivenKg,
       }));
     } else if (type === "sales") {
       title = "Sales Report";
