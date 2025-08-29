@@ -13,10 +13,10 @@ const costService = {
     const year = Number(parts[0]);
     const month = Number(parts[1]);
     const daysInMonth = new Date(year, month, 0).getDate();
-    
+
     const monthStart = monthKey + "-01";
     const monthEnd = `${monthKey}-${daysInMonth.toString().padStart(2, "0")}`;
-    
+
     const monthlyLogs = await DailyLog.findAll({
       where: { logDate: { [Op.between]: [monthStart, monthEnd] } },
     });
@@ -40,11 +40,12 @@ const costService = {
     const year = Number(parts[0]);
     const month = Number(parts[1]);
     const daysInMonth = new Date(year, month, 0).getDate();
-    
+
     let workingDays = 0;
     for (let day = 1; day <= daysInMonth; day++) {
       const dayOfWeek = new Date(year, month - 1, day).getDay();
-      if (dayOfWeek !== 0) { // 0 = Sunday
+      if (dayOfWeek !== 0) {
+        // 0 = Sunday
         workingDays++;
       }
     }
@@ -163,8 +164,13 @@ const costService = {
     const daysInMonth = new Date(year, month, 0).getDate();
 
     // Get average monthly production using the new helper function (Design 7.1)
-    const avgMonthlyProduction = await costService.getAverageMonthlyProduction(date);
-    const avgDailyProduction = avgMonthlyProduction > 0 ? avgMonthlyProduction / daysInMonth : daily.totalEggs || 1;
+    const avgMonthlyProduction = await costService.getAverageMonthlyProduction(
+      date
+    );
+    const avgDailyProduction =
+      avgMonthlyProduction > 0
+        ? avgMonthlyProduction / daysInMonth
+        : daily.totalEggs || 1;
 
     // Get monthly labor costs from payroll (Design 7.3)
     const payrollRows = await Payroll.findAll({
@@ -188,12 +194,14 @@ const costService = {
       : 0;
 
     // Calculate costs per egg based on average monthly production (Design 7.1)
-    const laborCostPerEgg = avgDailyProduction > 0
-      ? monthlyLaborCosts / daysInMonth / avgDailyProduction
-      : 0;
-    const fixedCostPerEgg = avgDailyProduction > 0
-      ? monthlyOperatingCosts / daysInMonth / avgDailyProduction
-      : 0;
+    const laborCostPerEgg =
+      avgDailyProduction > 0
+        ? monthlyLaborCosts / daysInMonth / avgDailyProduction
+        : 0;
+    const fixedCostPerEgg =
+      avgDailyProduction > 0
+        ? monthlyOperatingCosts / daysInMonth / avgDailyProduction
+        : 0;
 
     // Calculate health cost per egg (bird costs distributed over laying period)
     const healthCostPerEgg = await costService.calculateHealthCostPerEgg(date);
@@ -212,7 +220,7 @@ const costService = {
       totalCostPerEgg,
       suggestedPrices: {
         gradeA: totalCostPerEgg * 1.25, // 25% markup
-        gradeB: totalCostPerEgg * 1.2,  // 20% markup
+        gradeB: totalCostPerEgg * 1.2, // 20% markup
         gradeC: totalCostPerEgg * 1.15, // 15% markup
       },
     };
@@ -220,10 +228,61 @@ const costService = {
 
   // Calculate health costs per egg (bird acquisition costs distributed over laying period)
   calculateHealthCostPerEgg: async (date) => {
-    // This would integrate with a bird_costs table as per design
-    // For now, return 0 as placeholder
-    // TODO: Implement bird cost calculation when bird_costs table is available
-    return 0;
+    if (!date) return 0;
+
+    // Import BirdCost lazily to avoid circular deps
+    let BirdCost;
+    try {
+      BirdCost = (await import("../models/BirdCost.js")).default;
+    } catch (e) {
+      // model not present or import failed
+      return 0;
+    }
+
+    // Get total eggs produced on the date
+    const logs = await DailyLog.findAll({ where: { logDate: date } });
+    const totalEggs = logs.reduce((s, l) => {
+      const a = Number(l.eggsGradeA) || 0;
+      const b = Number(l.eggsGradeB) || 0;
+      const c = Number(l.eggsGradeC) || 0;
+      return s + a + b + c;
+    }, 0);
+
+    // Find bird batches whose laying window includes the date
+    const allBatches = await BirdCost.findAll();
+    if (!allBatches || allBatches.length === 0) return 0;
+
+    // For each batch, if date is within [batchDate, batchDate + expectedLayingMonths months], include amortized cost
+    const target = new Date(date);
+    let dailyBirdCostTotal = 0;
+    for (const b of allBatches) {
+      const batchDate = new Date(b.batchDate);
+      const months = Number(b.expectedLayingMonths) || 0;
+      if (months <= 0) continue;
+
+      // compute end date by adding months
+      const endDate = new Date(batchDate);
+      endDate.setMonth(endDate.getMonth() + months);
+
+      if (target < batchDate || target >= endDate) continue;
+
+      const birds = Number(b.birdsPurchased) || 0;
+      const costPerBird = Number(b.costPerBird) || 0;
+      const vacc = Number(b.vaccinationCostPerBird) || 0;
+      const totalCost = birds * (costPerBird + vacc);
+
+      // approximate total laying days
+      const totalLayingDays = months * 30; // approximate to 30 days/month
+      if (totalLayingDays <= 0) continue;
+
+      const perDayCost = totalCost / totalLayingDays;
+      dailyBirdCostTotal += perDayCost;
+    }
+
+    if (totalEggs <= 0) return 0;
+
+    const healthCostPerEgg = dailyBirdCostTotal / totalEggs;
+    return healthCostPerEgg;
   },
 
   // Daily cost calculation as per Design 7.1
@@ -248,7 +307,7 @@ const costService = {
         fixedCostPerEgg: 0,
         healthCostPerEgg: 0,
         totalCostPerEgg: 0,
-        suggestedPrices: { gradeA: 0, gradeB: 0, gradeC: 0 }
+        suggestedPrices: { gradeA: 0, gradeB: 0, gradeC: 0 },
       };
     }
 
@@ -283,10 +342,12 @@ const costService = {
       0
     );
 
-    const avgDailyProduction = await costService.getAverageMonthlyProduction(date) / daysInMonth;
-    const laborCostPerEgg = avgDailyProduction > 0
-      ? (monthlyLaborCosts / daysInMonth) / avgDailyProduction
-      : 0;
+    const avgDailyProduction =
+      (await costService.getAverageMonthlyProduction(date)) / daysInMonth;
+    const laborCostPerEgg =
+      avgDailyProduction > 0
+        ? monthlyLaborCosts / daysInMonth / avgDailyProduction
+        : 0;
 
     // Calculate other fixed costs (supervisor, utilities, etc.)
     const monthStart = monthKey + "-01";
@@ -301,14 +362,16 @@ const costService = {
         (Number(op.otherCosts) || 0)
       : 0;
 
-    const fixedCostPerEgg = avgDailyProduction > 0
-      ? (monthlyOperatingCosts / daysInMonth) / avgDailyProduction
-      : 0;
+    const fixedCostPerEgg =
+      avgDailyProduction > 0
+        ? monthlyOperatingCosts / daysInMonth / avgDailyProduction
+        : 0;
 
     // Calculate health costs (bird costs distributed over laying period)
     const healthCostPerEgg = await costService.calculateHealthCostPerEgg(date);
 
-    const totalCostPerEgg = feedCostPerEgg + laborCostPerEgg + fixedCostPerEgg + healthCostPerEgg;
+    const totalCostPerEgg =
+      feedCostPerEgg + laborCostPerEgg + fixedCostPerEgg + healthCostPerEgg;
 
     return {
       date,
@@ -320,7 +383,7 @@ const costService = {
       totalCostPerEgg,
       suggestedPrices: {
         gradeA: totalCostPerEgg * 1.25, // 25% markup
-        gradeB: totalCostPerEgg * 1.2,  // 20% markup
+        gradeB: totalCostPerEgg * 1.2, // 20% markup
         gradeC: totalCostPerEgg * 1.15, // 15% markup
       },
     };

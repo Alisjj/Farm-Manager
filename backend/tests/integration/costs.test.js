@@ -126,15 +126,11 @@ describe("Complete Farm Management Flow", () => {
   test("8. Get daily costs - should show non-zero values", async () => {
     const res = await auth(request(app).get("/api/costs/daily/2025-08-26"));
 
-    console.log(res.body);
-
     expect(res.statusCode).toBe(200);
     expect(res.body.totalEggs).toBeGreaterThan(0); // Should be 125 (100+20+5)
     expect(res.body.totalFeedKg).toBeGreaterThan(0); // Should be 30.5
     expect(res.body.feedCost).toBeGreaterThan(0); // Should be 30.5 * 0.8 = 24.4
     expect(res.body.feedCostPerEgg).toBeGreaterThan(0); // Should be 24.4 / 125 = 0.1952
-
-    console.log("Daily costs:", res.body);
   });
 
   test("9. Get egg price estimate - should show suggested prices", async () => {
@@ -145,8 +141,6 @@ describe("Complete Farm Management Flow", () => {
     expect(res.body.suggestedPrices.gradeA).toBeGreaterThan(0);
     expect(res.body.suggestedPrices.gradeB).toBeGreaterThan(0);
     expect(res.body.suggestedPrices.gradeC).toBeGreaterThan(0);
-
-    console.log("Egg price estimate:", res.body);
   });
 
   test("10. Get cost summary for date range", async () => {
@@ -157,7 +151,5 @@ describe("Complete Farm Management Flow", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.totalEggs).toBeGreaterThan(0);
     expect(res.body.totalFeedKg).toBeGreaterThan(0);
-
-    console.log("Cost summary:", res.body);
   });
 });

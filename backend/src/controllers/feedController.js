@@ -1,5 +1,6 @@
 import feedRecipeService from "../services/feedRecipeService.js";
 import feedBatchService from "../services/feedBatchService.js";
+import feedCostCalculator from "../services/feedCostCalculator.js";
 
 const feedController = {
   // Recipes
@@ -97,6 +98,20 @@ const feedController = {
         req.params.id
       );
       res.json(ingredients);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  estimateBatchCost: async (req, res, next) => {
+    try {
+      const { recipe, batchSizeKg, ingredientPrices } = req.body;
+      const result = feedCostCalculator.calculateFeedBatchCost(
+        recipe,
+        Number(batchSizeKg),
+        ingredientPrices || {}
+      );
+      res.json({ success: true, data: result });
     } catch (err) {
       next(err);
     }

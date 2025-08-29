@@ -16,7 +16,6 @@ import { User } from "./src/models/index.js";
       role: "Owner",
     });
 
-    console.log("Admin user created:", admin);
     process.exit(0);
   } catch (error) {
     console.error("Error creating admin user:", error);

@@ -62,7 +62,6 @@ export function close() {
   return sequelize.close();
 }
 
-// Optionally load all models from src/models and call .associate if present
 export function initModels(modelsDir = path.join(__dirname, "..", "models")) {
   const models = {};
   if (!fs.existsSync(modelsDir)) return models;
@@ -84,7 +83,19 @@ export function initModels(modelsDir = path.join(__dirname, "..", "models")) {
 
 export async function autoMigrate() {
   try {
-    await sequelize.sync({ alter: true }); // Use { force: true } to drop and recreate tables
+    if (process.env.USE_MIGRATIONS === "true") {
+      try {
+        const { execSync } = await import("child_process");
+        console.log("Running migrations via sequelize-cli...");
+        execSync("npx sequelize db:migrate", { stdio: "inherit" });
+        console.log("Migrations completed.");
+        return;
+      } catch (mErr) {
+        console.error("Failed to run sequelize migrations:", mErr);
+      }
+    }
+
+    await sequelize.sync({ alter: true });
     console.log("Database synchronized successfully.");
   } catch (err) {
     console.error("Database synchronization failed:", err);

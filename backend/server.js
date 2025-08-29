@@ -7,6 +7,7 @@ import salesRoutes from "./src/routes/sales.js";
 import feedRoutes from "./src/routes/feed.js";
 import costsRoutes from "./src/routes/costs.js";
 import laborRoutes from "./src/routes/labor.js";
+import reportsRoutes from "./src/routes/reports.js";
 import { autoMigrate } from "./src/utils/database.js";
 import errorHandler from "./src/middleware/errorHandler.js";
 
@@ -22,6 +23,7 @@ app.use("/api/sales", salesRoutes);
 app.use("/api/feed", feedRoutes);
 app.use("/api/costs", costsRoutes);
 app.use("/api", laborRoutes);
+app.use("/api/reports", reportsRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend server is running");

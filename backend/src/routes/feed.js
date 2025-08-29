@@ -7,6 +7,7 @@ import {
   validateId,
   handleValidation,
 } from "../middleware/validation.js";
+import { validateFeedEstimate } from "../validations/feed.js";
 
 const router = express.Router();
 
@@ -44,6 +45,14 @@ router.get(
   validateId,
   handleValidation,
   feedController.getBatchIngredients
+);
+
+// Estimate batch cost without creating
+router.post(
+  "/batches/estimate",
+  validateFeedEstimate,
+  handleValidation,
+  feedController.estimateBatchCost
 );
 
 export default router;
