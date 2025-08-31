@@ -1,8 +1,5 @@
 import request from "supertest";
-import {
-  sequelize,
-  autoMigrate,
-} from "../../src/utils/database.js";
+import { sequelize, autoMigrate } from "../../src/utils/database.js";
 import app from "../../testApp.js";
 import bcrypt from "bcrypt";
 
@@ -22,16 +19,16 @@ describe("Authentication Flow", () => {
       username: "testowner",
       password: ownerHash,
       role: "Owner",
-      fullName: "Test Owner"
+      fullName: "Test Owner",
     });
 
-    // Create supervisor user
-    const supervisorHash = await bcrypt.hash("supervisor123", 10);
+    // Create staff user
+    const supervisorHash = await bcrypt.hash("staff123", 10);
     await User.create({
-      username: "testsupervisor",
+      username: "teststaff",
       password: supervisorHash,
-      role: "Supervisor",
-      fullName: "Test Supervisor"
+      role: "staff",
+      fullName: "Test Staff",
     });
   });
 
@@ -53,10 +50,10 @@ describe("Authentication Flow", () => {
     ownerToken = res.body.token;
   });
 
-  test("2. Supervisor login successful", async () => {
+  test("2. Staff login successful", async () => {
     const res = await request(app)
       .post("/api/auth/login")
-      .send({ username: "testsupervisor", password: "supervisor123" });
+      .send({ username: "teststaff", password: "staff123" });
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty("success", true);
@@ -89,9 +86,7 @@ describe("Authentication Flow", () => {
   });
 
   test("6. User logout works", async () => {
-    const res = await auth(ownerToken)(
-      request(app).post("/api/auth/logout")
-    );
+    const res = await auth(ownerToken)(request(app).post("/api/auth/logout"));
 
     expect([200, 204]).toContain(res.statusCode);
     expect(res.body).toHaveProperty("success", true);
@@ -122,9 +117,7 @@ describe("Authentication Flow", () => {
   });
 
   test("9. Access protected endpoint with valid token", async () => {
-    const res = await auth(ownerToken)(
-      request(app).get("/api/houses")
-    );
+    const res = await auth(ownerToken)(request(app).get("/api/houses"));
 
     expect(res.statusCode).toBe(200); // Should return empty array if no houses exist
   });

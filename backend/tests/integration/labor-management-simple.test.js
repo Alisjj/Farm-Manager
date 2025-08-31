@@ -21,12 +21,12 @@ describe("Labor Management Simple Flow", () => {
       fullName: "Test Owner",
     });
 
-    const supervisorHash = await bcrypt.hash("supervisor123", 10);
+    const supervisorHash = await bcrypt.hash("staff123", 10);
     await User.create({
-      username: "testsupervisor",
+      username: "teststaff",
       password: supervisorHash,
-      role: "supervisor",
-      fullName: "Test Supervisor",
+      role: "staff",
+      fullName: "Test Staff",
     });
   });
 
@@ -46,10 +46,10 @@ describe("Labor Management Simple Flow", () => {
     ownerToken = res.body.token;
   });
 
-  test("2. Supervisor login", async () => {
+  test("2. Staff login", async () => {
     const res = await request(app)
       .post("/api/auth/login")
-      .send({ username: "testsupervisor", password: "supervisor123" });
+      .send({ username: "teststaff", password: "staff123" });
 
     expect(res.statusCode).toBe(200);
     expect(res.body.token).toBeDefined();

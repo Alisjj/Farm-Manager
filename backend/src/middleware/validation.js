@@ -1,5 +1,7 @@
 import { body, query, param } from "express-validator";
 import { validationResult } from "express-validator";
+import DailyLog from "../models/DailyLog.js";
+import { BadRequestError } from "../utils/exceptions.js";
 
 export const validateCreateDailyLog = [
   body("logDate")
@@ -8,6 +10,21 @@ export const validateCreateDailyLog = [
   body("houseId")
     .isInt({ min: 1 })
     .withMessage("houseId must be a positive integer"),
+  body("logDate").custom(async (value, { req }) => {
+    const { houseId } = req.body;
+    if (houseId && value) {
+      const existingLog = await DailyLog.findOne({
+        where: {
+          logDate: value,
+          houseId: houseId,
+        },
+      });
+      if (existingLog) {
+        throw new Error("A daily log for this date and house already exists");
+      }
+    }
+    return true;
+  }),
   body("eggsGradeA")
     .optional()
     .isInt({ min: 0 })
@@ -83,8 +100,6 @@ export const validateDailyLogQueries = [
     .withMessage("houseId must be a positive integer"),
 ];
 
-
-
 export const validateCreateCustomer = [
   body("customerName")
     .notEmpty()
@@ -95,10 +110,7 @@ export const validateCreateCustomer = [
     .optional()
     .isLength({ max: 20 })
     .withMessage("phone max 20 chars"),
-  body("email")
-    .optional()
-    .isEmail()
-    .withMessage("email must be valid"),
+  body("email").optional().isEmail().withMessage("email must be valid"),
   body("address")
     .optional()
     .isLength({ max: 500 })
@@ -107,15 +119,15 @@ export const validateCreateCustomer = [
 
 export const validateUpdateCustomer = [
   param("id").isInt({ min: 1 }).withMessage("ID must be a positive integer"),
-  body("customerName").optional().notEmpty().withMessage("customerName cannot be empty"),
+  body("customerName")
+    .optional()
+    .notEmpty()
+    .withMessage("customerName cannot be empty"),
   body("phone")
     .optional()
     .isLength({ max: 20 })
     .withMessage("phone max 20 chars"),
-  body("email")
-    .optional()
-    .isEmail()
-    .withMessage("email must be valid"),
+  body("email").optional().isEmail().withMessage("email must be valid"),
   body("address")
     .optional()
     .isLength({ max: 500 })
@@ -264,8 +276,8 @@ export const validateCreateFeedRecipe = [
     .withMessage("limestonePercent must be between 0 and 100"),
   body("otherIngredients")
     .optional()
-    .isArray()
-    .withMessage("otherIngredients must be an array"),
+    .isObject()
+    .withMessage("otherIngredients must be an object"),
 ];
 
 export const validateCreateFeedBatch = [
@@ -479,7 +491,3 @@ export const validateGeneratePayroll = [
     .notEmpty()
     .withMessage("month_year is required in format YYYY-MM"),
 ];
-
-
-
-

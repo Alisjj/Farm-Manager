@@ -116,6 +116,40 @@ const feedController = {
       next(err);
     }
   },
+
+  updateBatch: async (req, res, next) => {
+    try {
+      const updated = await feedBatchService.updateFeedBatch(
+        req.params.id,
+        req.body
+      );
+      res.status(200).json({ success: true, data: updated });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  deleteBatch: async (req, res, next) => {
+    try {
+      await feedBatchService.deleteFeedBatch(req.params.id);
+      res
+        .status(200)
+        .json({ success: true, message: "Feed batch deleted successfully" });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  deleteIngredient: async (req, res, next) => {
+    try {
+      await feedBatchService.removeBatchIngredient(req.params.ingredientId);
+      res
+        .status(200)
+        .json({ success: true, message: "Ingredient deleted successfully" });
+    } catch (error) {
+      next(error);
+    }
+  },
 };
 
 export default feedController;

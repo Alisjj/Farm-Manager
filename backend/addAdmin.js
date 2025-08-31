@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { User } from "./src/models/index.js";
+import User from "./src/models/User.js";
 
 /**
  * Script to add an admin user to the database.

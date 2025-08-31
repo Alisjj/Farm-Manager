@@ -43,9 +43,9 @@ describe("Reports RBAC", () => {
     expect(res.body).toHaveProperty("totalEggs");
   });
 
-  test("supervisor role allowed (200)", async () => {
+  test("staff role allowed (200)", async () => {
     const token = jwt.sign(
-      { id: 4, username: "supervisor", role: "supervisor" },
+      { id: 4, username: "staff", role: "staff" },
       config.JWT_SECRET,
       { expiresIn: "1h" }
     );

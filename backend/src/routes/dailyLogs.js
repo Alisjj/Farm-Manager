@@ -17,6 +17,8 @@ router.get(
   dailyLogController.getAll
 );
 
+router.get("/:id", validateId, handleValidation, dailyLogController.getById);
+
 router.post(
   "/",
   validateCreateDailyLog,

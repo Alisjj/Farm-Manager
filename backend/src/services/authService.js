@@ -33,7 +33,32 @@ const authService = {
       }
     );
 
-    return { accessToken, refreshToken };
+    // Return user data without password
+    const userData = {
+      id: user.id,
+      username: user.username,
+      role: String(user.role).toLowerCase(),
+      email: user.email,
+      createdAt: user.createdAt,
+    };
+
+    return { user: userData, accessToken, refreshToken };
+  },
+
+  getCurrentUser: async (userId) => {
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      throw new UnauthorizedError("User not found");
+    }
+
+    return {
+      id: user.id,
+      username: user.username,
+      role: String(user.role).toLowerCase(),
+      email: user.email,
+      createdAt: user.createdAt,
+    };
   },
 
   refreshToken: async (refreshToken) => {

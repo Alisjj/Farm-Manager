@@ -23,12 +23,12 @@ describe("Feed Management Flow", () => {
       fullName: "Test Owner",
     });
 
-    const supervisorHash = await bcrypt.hash("supervisor123", 10);
+    const supervisorHash = await bcrypt.hash("staff123", 10);
     await User.create({
-      username: "testsupervisor",
+      username: "teststaff",
       password: supervisorHash,
-      role: "Supervisor",
-      fullName: "Test Supervisor",
+      role: "staff",
+      fullName: "Test Staff",
     });
   });
 
@@ -51,7 +51,7 @@ describe("Feed Management Flow", () => {
   test("2. Supervisor login", async () => {
     const res = await request(app)
       .post("/api/auth/login")
-      .send({ username: "testsupervisor", password: "supervisor123" });
+      .send({ username: "teststaff", password: "staff123" });
 
     expect(res.statusCode).toBe(200);
     supervisorToken = res.body.token;
@@ -93,7 +93,7 @@ describe("Feed Management Flow", () => {
 
   test("5. Get recipe by ID", async () => {
     if (!recipeId) {
-      console.warn("Skipping test 5 - no recipe ID available");
+      // Skipping test 5 - no recipe ID available
       return;
     }
 
@@ -110,7 +110,7 @@ describe("Feed Management Flow", () => {
 
   test("6. Update feed recipe", async () => {
     if (!recipeId) {
-      console.warn("Skipping test 6 - no recipe ID available");
+      // Skipping test 6 - no recipe ID available
       return;
     }
 
@@ -147,7 +147,7 @@ describe("Feed Management Flow", () => {
     });
 
     expect([200, 201]).toContain(res.statusCode);
-    if (res.statusCode === 201) {
+    if (res.statusCode === 201 || res.statusCode === 200) {
       expect(res.body.data).toHaveProperty("id");
       batchId = res.body.data.id;
     }

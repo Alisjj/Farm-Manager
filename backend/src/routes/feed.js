@@ -32,6 +32,8 @@ router.post(
 );
 router.get("/batches", feedController.getAllBatches);
 router.get("/batches/:id", feedController.getBatchById);
+router.put("/batches/:id", feedController.updateBatch);
+router.delete("/batches/:id", feedController.deleteBatch);
 
 // Batch ingredients
 router.post(
@@ -45,6 +47,12 @@ router.get(
   validateId,
   handleValidation,
   feedController.getBatchIngredients
+);
+router.delete(
+  "/batches/:id/ingredients/:ingredientId",
+  validateId,
+  handleValidation,
+  feedController.deleteIngredient
 );
 
 // Estimate batch cost without creating

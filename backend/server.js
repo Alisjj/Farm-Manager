@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import authRoutes from "./src/routes/auth.js";
 import dailyLogsRoutes from "./src/routes/dailyLogs.js";
 import housesRoutes from "./src/routes/houses.js";
@@ -8,16 +9,24 @@ import feedRoutes from "./src/routes/feed.js";
 import costsRoutes from "./src/routes/costs.js";
 import laborRoutes from "./src/routes/labor.js";
 import reportsRoutes from "./src/routes/reports.js";
+import staffRoutes from "./src/routes/staff.js";
 import { autoMigrate } from "./src/utils/database.js";
 import errorHandler from "./src/middleware/errorHandler.js";
-
-console.log("Loading labor routes...");
-console.log("Labor routes type:", typeof laborRoutes);
-console.log("Labor routes default:", typeof laborRoutes.default);
-
+import requestLogger from "./src/middleware/logger.js";
 const app = express();
 
+// CORS configuration
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "http://localhost:3001"], // Allow both possible frontend ports
+    credentials: true,
+  })
+);
+
 app.use(express.json());
+
+// Request logger (prints method, url, body for mutating requests, status, and timing)
+app.use(requestLogger);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/daily-logs", dailyLogsRoutes);
@@ -28,12 +37,23 @@ app.use("/api/feed", feedRoutes);
 app.use("/api/costs", costsRoutes);
 app.use("/api", laborRoutes);
 app.use("/api/reports", reportsRoutes);
+app.use("/api/staff", staffRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend server is running");
 });
 
-const PORT = process.env.PORT || 3000;
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+  res.json({
+    success: true,
+    message: "Backend API is running",
+    timestamp: new Date().toISOString(),
+    port: PORT,
+  });
+});
+
+const PORT = process.env.PORT || 5001;
 (async () => {
   try {
     await autoMigrate();

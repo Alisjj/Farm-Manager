@@ -50,7 +50,9 @@ if (DB_DIALECT === "sqlite") {
 export async function connect() {
   try {
     await sequelize.authenticate();
-    console.log("Database connected successfully.");
+    if (process.env.NODE_ENV !== "test") {
+      console.log("Database connected successfully.");
+    }
     return true;
   } catch (err) {
     console.error("Database connection failed:", err);
@@ -86,9 +88,13 @@ export async function autoMigrate() {
     if (process.env.USE_MIGRATIONS === "true") {
       try {
         const { execSync } = await import("child_process");
-        console.log("Running migrations via sequelize-cli...");
+        if (process.env.NODE_ENV !== "test") {
+          console.log("Running migrations via sequelize-cli...");
+        }
         execSync("npx sequelize db:migrate", { stdio: "inherit" });
-        console.log("Migrations completed.");
+        if (process.env.NODE_ENV !== "test") {
+          console.log("Migrations completed.");
+        }
         return;
       } catch (mErr) {
         console.error("Failed to run sequelize migrations:", mErr);
@@ -96,7 +102,7 @@ export async function autoMigrate() {
     }
 
     await sequelize.sync({ alter: true });
-    console.log("Database synchronized successfully.");
+    // Database synchronized successfully (logging disabled for tests)
   } catch (err) {
     console.error("Database synchronization failed:", err);
     throw err;

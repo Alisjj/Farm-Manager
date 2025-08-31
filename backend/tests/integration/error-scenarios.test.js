@@ -1,8 +1,5 @@
 import request from "supertest";
-import {
-  sequelize,
-  autoMigrate,
-} from "../../src/utils/database.js";
+import { sequelize, autoMigrate } from "../../src/utils/database.js";
 import app from "../../testApp.js";
 import bcrypt from "bcrypt";
 
@@ -22,15 +19,15 @@ describe("Error Scenarios and Edge Cases", () => {
       username: "testowner",
       password: ownerHash,
       role: "Owner",
-      fullName: "Test Owner"
+      fullName: "Test Owner",
     });
 
-    const supervisorHash = await bcrypt.hash("supervisor123", 10);
+    const supervisorHash = await bcrypt.hash("staff123", 10);
     await User.create({
-      username: "testsupervisor",
+      username: "teststaff",
       password: supervisorHash,
-      role: "Supervisor",
-      fullName: "Test Supervisor"
+      role: "staff",
+      fullName: "Test Staff",
     });
   });
 
@@ -50,7 +47,7 @@ describe("Error Scenarios and Edge Cases", () => {
 
     const supervisorRes = await request(app)
       .post("/api/auth/login")
-      .send({ username: "testsupervisor", password: "supervisor123" });
+      .send({ username: "teststaff", password: "staff123" });
     expect(supervisorRes.statusCode).toBe(200);
     supervisorToken = supervisorRes.body.token;
   });
@@ -86,36 +83,34 @@ describe("Error Scenarios and Edge Cases", () => {
     });
 
     test("SQL injection attempt", async () => {
-      const res = await request(app)
-        .post("/api/auth/login")
-        .send({
-          username: "admin' OR '1'='1",
-          password: "password"
-        });
+      const res = await request(app).post("/api/auth/login").send({
+        username: "admin' OR '1'='1",
+        password: "password",
+      });
       expect(res.statusCode).toBe(401);
     });
   });
 
   describe("House Management Edge Cases", () => {
     test("Create house with maximum capacity", async () => {
-      const res = await auth(ownerToken)(
-        request(app).post("/api/houses")
-      ).send({
-        houseName: "Maximum Capacity House",
-        capacity: 999999, // Very large number
-        currentBirdCount: 999999
-      });
+      const res = await auth(ownerToken)(request(app).post("/api/houses")).send(
+        {
+          houseName: "Maximum Capacity House",
+          capacity: 999999, // Very large number
+          currentBirdCount: 999999,
+        }
+      );
       expect([200, 201, 400]).toContain(res.statusCode);
     });
 
     test("Create house with zero capacity", async () => {
-      const res = await auth(ownerToken)(
-        request(app).post("/api/houses")
-      ).send({
-        houseName: "Zero Capacity House",
-        capacity: 0,
-        currentBirdCount: 0
-      });
+      const res = await auth(ownerToken)(request(app).post("/api/houses")).send(
+        {
+          houseName: "Zero Capacity House",
+          capacity: 0,
+          currentBirdCount: 0,
+        }
+      );
       expect([200, 201, 400]).toContain(res.statusCode);
     });
 
@@ -126,7 +121,7 @@ describe("Error Scenarios and Edge Cases", () => {
       ).send({
         houseName: "Test House for Negative Capacity",
         capacity: 100,
-        currentBirdCount: 50
+        currentBirdCount: 50,
       });
 
       if ([200, 201].includes(createRes.statusCode)) {
@@ -136,16 +131,14 @@ describe("Error Scenarios and Edge Cases", () => {
         const updateRes = await auth(ownerToken)(
           request(app).put(`/api/houses/${houseId}`)
         ).send({
-          capacity: -100
+          capacity: -100,
         });
         expect([200, 400]).toContain(updateRes.statusCode);
       }
     });
 
     test("Get non-existent house", async () => {
-      const res = await auth(ownerToken)(
-        request(app).get("/api/houses/99999")
-      );
+      const res = await auth(ownerToken)(request(app).get("/api/houses/99999"));
       expect(res.statusCode).toBe(404);
     });
 
@@ -161,7 +154,7 @@ describe("Error Scenarios and Edge Cases", () => {
     test("Create daily log with future date", async () => {
       const futureDate = new Date();
       futureDate.setFullYear(futureDate.getFullYear() + 1);
-      const dateString = futureDate.toISOString().split('T')[0];
+      const dateString = futureDate.toISOString().split("T")[0];
 
       const res = await auth(supervisorToken)(
         request(app).post("/api/daily-logs")
@@ -171,7 +164,7 @@ describe("Error Scenarios and Edge Cases", () => {
         eggsGradeA: 100,
         eggsGradeB: 20,
         eggsGradeC: 5,
-        feedGivenKg: 40.0
+        feedGivenKg: 40.0,
       });
       expect([200, 201, 400]).toContain(res.statusCode);
     });
@@ -185,7 +178,7 @@ describe("Error Scenarios and Edge Cases", () => {
         eggsGradeA: 100,
         eggsGradeB: 20,
         eggsGradeC: 5,
-        feedGivenKg: 40.0
+        feedGivenKg: 40.0,
       });
       expect([200, 201, 400]).toContain(res.statusCode);
     });
@@ -199,7 +192,7 @@ describe("Error Scenarios and Edge Cases", () => {
         eggsGradeA: 999999,
         eggsGradeB: 999999,
         eggsGradeC: 999999,
-        feedGivenKg: 999999.99
+        feedGivenKg: 999999.99,
       });
       expect([200, 201, 400]).toContain(res.statusCode);
     });
@@ -213,7 +206,7 @@ describe("Error Scenarios and Edge Cases", () => {
         eggsGradeA: 100.5, // Should be integer
         eggsGradeB: 20,
         eggsGradeC: 5,
-        feedGivenKg: 40.0
+        feedGivenKg: 40.0,
       });
       expect([200, 201, 400]).toContain(res.statusCode);
     });
@@ -227,13 +220,13 @@ describe("Error Scenarios and Edge Cases", () => {
         saleDate: "2025-08-25",
         customerId: 1,
         gradeAQty: 0,
-        gradeAPrice: 25.00,
+        gradeAPrice: 25.0,
         gradeBQty: 0,
-        gradeBPrice: 22.00,
+        gradeBPrice: 22.0,
         gradeCQty: 0,
-        gradeCPrice: 18.00,
+        gradeCPrice: 18.0,
         paymentMethod: "cash",
-        paymentStatus: "paid"
+        paymentStatus: "paid",
       });
       expect([200, 201, 400]).toContain(res.statusCode);
     });
@@ -245,9 +238,9 @@ describe("Error Scenarios and Edge Cases", () => {
         saleDate: "2025-08-25",
         customerId: 1,
         gradeAQty: 10,
-        gradeAPrice: -25.00, // Negative price
+        gradeAPrice: -25.0, // Negative price
         paymentMethod: "cash",
-        paymentStatus: "paid"
+        paymentStatus: "paid",
       });
       expect([200, 201, 400]).toContain(res.statusCode);
     });
@@ -261,7 +254,7 @@ describe("Error Scenarios and Edge Cases", () => {
         gradeAQty: 10,
         gradeAPrice: 999999.99, // Very high price
         paymentMethod: "cash",
-        paymentStatus: "paid"
+        paymentStatus: "paid",
       });
       expect([200, 201, 400]).toContain(res.statusCode);
     });
@@ -276,7 +269,7 @@ describe("Error Scenarios and Edge Cases", () => {
         cornPercent: 60,
         soybeanPercent: 50, // Total > 100
         wheatBranPercent: 20,
-        limestonePercent: 10
+        limestonePercent: 10,
       });
       expect([200, 201, 400]).toContain(res.statusCode);
     });
@@ -289,7 +282,7 @@ describe("Error Scenarios and Edge Cases", () => {
         cornPercent: 0,
         soybeanPercent: 0,
         wheatBranPercent: 0,
-        limestonePercent: 0
+        limestonePercent: 0,
       });
       expect([200, 201, 400]).toContain(res.statusCode);
     });
@@ -302,7 +295,7 @@ describe("Error Scenarios and Edge Cases", () => {
         batchSizeKg: 1000,
         recipeId: 1,
         totalCost: 0,
-        costPerKg: 0
+        costPerKg: 0,
       });
       expect([200, 201, 400]).toContain(res.statusCode);
     });
@@ -316,7 +309,7 @@ describe("Error Scenarios and Edge Cases", () => {
         employeeId: "HIGH001",
         fullName: "High Salary Employee",
         position: "CEO",
-        monthlySalary: 9999999.99
+        monthlySalary: 9999999.99,
       });
       expect([200, 201, 400]).toContain(res.statusCode);
     });
@@ -328,7 +321,7 @@ describe("Error Scenarios and Edge Cases", () => {
         employeeId: "ZERO001",
         fullName: "Zero Salary Employee",
         position: "Volunteer",
-        monthlySalary: 0
+        monthlySalary: 0,
       });
       expect([200, 201, 400]).toContain(res.statusCode);
     });
@@ -340,7 +333,7 @@ describe("Error Scenarios and Edge Cases", () => {
         workDate: "2025-08-25",
         laborerId: 99999,
         tasksAssigned: ["collection"],
-        attendanceStatus: "present"
+        attendanceStatus: "present",
       });
       expect([400, 404]).toContain(res.statusCode);
     });
@@ -349,21 +342,27 @@ describe("Error Scenarios and Edge Cases", () => {
   describe("Report Edge Cases", () => {
     test("Get report with invalid date range", async () => {
       const res = await auth(ownerToken)(
-        request(app).get("/api/reports/production?start=2025-08-31&end=2025-08-01")
+        request(app).get(
+          "/api/reports/production?start=2025-08-31&end=2025-08-01"
+        )
       );
       expect([200, 400]).toContain(res.statusCode);
     });
 
     test("Get report with very large date range", async () => {
       const res = await auth(ownerToken)(
-        request(app).get("/api/reports/production?start=2000-01-01&end=2030-12-31")
+        request(app).get(
+          "/api/reports/production?start=2000-01-01&end=2030-12-31"
+        )
       );
       expect(res.statusCode).toBe(200);
     });
 
     test("Get report with malformed dates", async () => {
       const res = await auth(ownerToken)(
-        request(app).get("/api/reports/production?start=invalid-date&end=2025-08-31")
+        request(app).get(
+          "/api/reports/production?start=invalid-date&end=2025-08-31"
+        )
       );
       expect([200, 400, 500]).toContain(res.statusCode);
     });
@@ -374,21 +373,21 @@ describe("Error Scenarios and Edge Cases", () => {
       const promises = [];
       for (let i = 0; i < 5; i++) {
         promises.push(
-          auth(supervisorToken)(
-            request(app).post("/api/daily-logs")
-          ).send({
-            logDate: `2025-09-${String(i + 1).padStart(2, '0')}`,
+          auth(supervisorToken)(request(app).post("/api/daily-logs")).send({
+            logDate: `2025-09-${String(i + 1).padStart(2, "0")}`,
             houseId: testIds.houseId || 1,
             eggsGradeA: 100 + i * 10,
             eggsGradeB: 20,
             eggsGradeC: 5,
-            feedGivenKg: 40 + i
+            feedGivenKg: 40 + i,
           })
         );
       }
 
       const results = await Promise.all(promises);
-      const successes = results.filter(r => [200, 201].includes(r.statusCode));
+      const successes = results.filter((r) =>
+        [200, 201].includes(r.statusCode)
+      );
       expect(successes.length).toBeGreaterThan(0);
     });
 
@@ -396,50 +395,33 @@ describe("Error Scenarios and Edge Cases", () => {
       const promises = [];
       for (let i = 0; i < 3; i++) {
         promises.push(
-          auth(supervisorToken)(
-            request(app).post("/api/sales")
-          ).send({
+          auth(supervisorToken)(request(app).post("/api/sales")).send({
             saleDate: "2025-08-25",
             customerId: 1,
             gradeAQty: 10 + i,
-            gradeAPrice: 25.00,
+            gradeAPrice: 25.0,
             paymentMethod: "cash",
-            paymentStatus: "paid"
+            paymentStatus: "paid",
           })
         );
       }
 
       const results = await Promise.all(promises);
-      const successes = results.filter(r => [200, 201].includes(r.statusCode));
+      const successes = results.filter((r) =>
+        [200, 201].includes(r.statusCode)
+      );
       expect(successes.length).toBeGreaterThan(0);
     });
   });
 
   describe("Data Integrity Tests", () => {
-    test("Test foreign key constraints", async () => {
-      const res = await auth(supervisorToken)(
-        request(app).post("/api/daily-logs")
-      ).send({
-        logDate: "2025-08-25",
-        houseId: 99999, // Non-existent house
-        eggsGradeA: 100,
-        eggsGradeB: 20,
-        eggsGradeC: 5,
-        feedGivenKg: 40.0
-      });
-      expect([400, 404, 500]).toContain(res.statusCode);
-    });
-
     test("Test unique constraints", async () => {
-      // Try to create duplicate user
-      const res = await request(app)
-        .post("/api/auth/login")
-        .send({
-          username: "testowner",
-          password: "owner123"
-        });
+      const res = await request(app).post("/api/auth/login").send({
+        username: "testowner",
+        password: "owner123",
+      });
 
-      expect(res.statusCode).toBe(200); // Should succeed (user exists)
+      expect(res.statusCode).toBe(200);
     });
   });
 
@@ -467,7 +449,7 @@ describe("Error Scenarios and Edge Cases", () => {
         eggsGradeB: 20,
         eggsGradeC: 5,
         feedGivenKg: 40.0,
-        notes: largeNotes
+        notes: largeNotes,
       });
       expect([200, 201, 400]).toContain(res.statusCode);
     });

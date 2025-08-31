@@ -1,8 +1,5 @@
 import request from "supertest";
-import {
-  sequelize,
-  autoMigrate,
-} from "../../src/utils/database.js";
+import { sequelize, autoMigrate } from "../../src/utils/database.js";
 import app from "../../testApp.js";
 import bcrypt from "bcrypt";
 
@@ -22,15 +19,15 @@ describe("House Management Flow", () => {
       username: "testowner",
       password: ownerHash,
       role: "Owner",
-      fullName: "Test Owner"
+      fullName: "Test Owner",
     });
 
-    const supervisorHash = await bcrypt.hash("supervisor123", 10);
+    const supervisorHash = await bcrypt.hash("staff123", 10);
     await User.create({
-      username: "testsupervisor",
+      username: "teststaff",
       password: supervisorHash,
-      role: "Supervisor",
-      fullName: "Test Supervisor"
+      role: "staff",
+      fullName: "Test Staff",
     });
   });
 
@@ -53,21 +50,19 @@ describe("House Management Flow", () => {
   test("2. Supervisor login", async () => {
     const res = await request(app)
       .post("/api/auth/login")
-      .send({ username: "testsupervisor", password: "supervisor123" });
+      .send({ username: "teststaff", password: "staff123" });
 
     expect(res.statusCode).toBe(200);
     supervisorToken = res.body.token;
   });
 
   test("3. Create house", async () => {
-    const res = await auth(ownerToken)(
-      request(app).post("/api/houses")
-    ).send({
+    const res = await auth(ownerToken)(request(app).post("/api/houses")).send({
       houseName: "House Alpha",
       capacity: 1000,
       currentBirdCount: 800,
       location: "North Wing",
-      description: "Main egg production house"
+      description: "Main egg production house",
     });
 
     expect([200, 201]).toContain(res.statusCode);
@@ -76,9 +71,7 @@ describe("House Management Flow", () => {
   });
 
   test("4. Get all houses", async () => {
-    const res = await auth(supervisorToken)(
-      request(app).get("/api/houses")
-    );
+    const res = await auth(supervisorToken)(request(app).get("/api/houses"));
 
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
@@ -101,7 +94,7 @@ describe("House Management Flow", () => {
     ).send({
       houseName: "House Alpha - Updated",
       currentBirdCount: 850,
-      description: "Updated main egg production house"
+      description: "Updated main egg production house",
     });
 
     expect(res.statusCode).toBe(200);
@@ -110,13 +103,11 @@ describe("House Management Flow", () => {
   });
 
   test("7. Create second house", async () => {
-    const res = await auth(ownerToken)(
-      request(app).post("/api/houses")
-    ).send({
+    const res = await auth(ownerToken)(request(app).post("/api/houses")).send({
       houseName: "House Beta",
       capacity: 800,
       currentBirdCount: 600,
-      location: "South Wing"
+      location: "South Wing",
     });
 
     expect([200, 201]).toContain(res.statusCode);
@@ -135,7 +126,7 @@ describe("House Management Flow", () => {
     const res = await auth(supervisorToken)(
       request(app).put(`/api/houses/${houseId}`)
     ).send({
-      currentBirdCount: 900
+      currentBirdCount: 900,
     });
 
     expect(res.statusCode).toBe(200);
@@ -143,10 +134,8 @@ describe("House Management Flow", () => {
   });
 
   test("10. Create house with missing optional fields", async () => {
-    const res = await auth(ownerToken)(
-      request(app).post("/api/houses")
-    ).send({
-      houseName: "House with Defaults"
+    const res = await auth(ownerToken)(request(app).post("/api/houses")).send({
+      houseName: "House with Defaults",
       // Missing capacity and currentBirdCount - should use defaults
     });
 
@@ -156,12 +145,10 @@ describe("House Management Flow", () => {
   });
 
   test("11. Create house with invalid capacity", async () => {
-    const res = await auth(ownerToken)(
-      request(app).post("/api/houses")
-    ).send({
+    const res = await auth(ownerToken)(request(app).post("/api/houses")).send({
       houseName: "Invalid House",
       capacity: -100, // Invalid negative capacity
-      currentBirdCount: 50
+      currentBirdCount: 50,
     });
 
     expect(res.statusCode).toBe(400);
@@ -171,7 +158,7 @@ describe("House Management Flow", () => {
     const res = await auth(supervisorToken)(
       request(app).put(`/api/houses/${houseId}`)
     ).send({
-      currentBirdCount: 1500 // Exceeds capacity of 1000
+      currentBirdCount: 1500, // Exceeds capacity of 1000
     });
 
     // This might be allowed depending on validation rules
@@ -179,9 +166,7 @@ describe("House Management Flow", () => {
   });
 
   test("13. Get house statistics", async () => {
-    const res = await auth(ownerToken)(
-      request(app).get("/api/houses/stats")
-    );
+    const res = await auth(ownerToken)(request(app).get("/api/houses/stats"));
 
     // This hits the getById route since 'stats' is treated as an ID
     expect(res.statusCode).toBe(400); // Validation fails for non-numeric ID

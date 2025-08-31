@@ -16,7 +16,7 @@ Design and develop a management system for small-scale egg production operations
 
 ### 1.2 Scope
 
-- Daily production logging by supervisor
+- Daily production logging by staff
 - Sales and customer management
 - Local feed production cost calculation
 - Labor management and payroll system
@@ -25,7 +25,7 @@ Design and develop a management system for small-scale egg production operations
 
 ### 1.3 Key Stakeholders
 
-- **Primary Users:** Farm Owner, Farm Supervisor
+- **Primary Users:** Farm Owner, Farm Staff
 - **Secondary Users:** Farm laborers and future staff members
 
 ---
@@ -36,22 +36,22 @@ Design and develop a management system for small-scale egg production operations
 
 #### 2.1.1 User Management
 
-- **FR-001:** System shall support two user roles: Owner and Supervisor
+- **FR-001:** System shall support two user roles: Owner and Staff
 - **FR-002:** Users shall authenticate via username/password
 - **FR-003:** Role-based access control for different features
 
 #### 2.1.2 Daily Operations Logging
 
-- **FR-004:** Supervisor shall log daily egg collection by house/coop
+- **FR-004:** Staff shall log daily egg collection by house/coop
 - **FR-005:** System shall record egg quality grades (A, B, C)
-- **FR-006:** Supervisor shall record daily feed consumption
+- **FR-006:** Staff shall record daily feed consumption
 - **FR-007:** System shall track daily mortality and health observations
 - **FR-008:** All entries shall be timestamped and user-attributed
 
 #### 2.1.3 Sales Management
 
 - **FR-009:** System shall maintain customer database
-- **FR-010:** Supervisor shall record daily sales transactions
+- **FR-010:** Staff shall record daily sales transactions
 - **FR-011:** System shall track payment methods and status
 - **FR-012:** Different pricing by egg grade shall be supported
 - **FR-013:** Sales reports shall be generated automatically
@@ -66,7 +66,7 @@ Design and develop a management system for small-scale egg production operations
 #### 2.1.5 Labor Management
 
 - **FR-018:** System shall maintain laborer database with personal and employment information
-- **FR-019:** Supervisor shall record daily work assignments and attendance
+- **FR-019:** Staff shall record daily work assignments and attendance
 - **FR-020:** System shall track laborer performance and task completion
 - **FR-021:** Monthly payroll shall be calculated automatically based on attendance
 - **FR-022:** Salary deductions for absences shall be calculated proportionally
@@ -102,7 +102,7 @@ Design and develop a management system for small-scale egg production operations
 
 #### 2.2.2 Usability
 
-- **NFR-004:** Mobile-responsive design for supervisor field use
+- **NFR-004:** Mobile-responsive design for staff field use
 - **NFR-005:** Intuitive interface requiring minimal training
 - **NFR-006:** Offline capability for mobile data entry (sync when online)
 
@@ -127,7 +127,7 @@ Design and develop a management system for small-scale egg production operations
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Mobile App    │    │   Web Dashboard │    │   API Gateway   │
-│  (Supervisor)   │    │    (Owner)      │    │                 │
+│  (Staff)   │    │    (Owner)      │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          └───────────────────────┼───────────────────────┘
@@ -488,7 +488,7 @@ GET    /api/reports/export/{type}?format={csv|pdf}
 
 ## 6. User Interface Design
 
-### 6.1 Mobile Interface (Supervisor)
+### 6.1 Mobile Interface (Staff)
 
 #### 6.1.1 Daily Entry Screen
 
@@ -794,9 +794,9 @@ function calculateMonthlyPayroll(laborerId, monthYear) {
 - Basic owner dashboard
 - Database setup and core APIs
 
-**Success Criteria:**
+- **Success Criteria:**
 
-- Supervisor can log daily production
+- Staff can log daily production
 - Owner can view production summaries
 - Feed costs can be calculated
 
@@ -950,7 +950,7 @@ function calculateMonthlyPayroll(laborerId, monthYear) {
 ### 13.2 Business Risks
 
 - **User adoption:** Mitigated by simple, intuitive interface design
-- **Data accuracy:** Input validation and supervisor training
+- **Data accuracy:** Input validation and staff training
 - **System downtime:** Redundant hosting and quick recovery procedures
 
 ### 13.3 Mitigation Strategies

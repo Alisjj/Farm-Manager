@@ -1,11 +1,5 @@
 "use strict";
 
-/**
- * Initial schema migration - creates core tables used by the backend.
- * This file is written for use with sequelize-cli (umzug). Run with:
- *   npx sequelize db:migrate
- */
-
 module.exports = {
   async up(queryInterface, Sequelize) {
     // Users
@@ -230,15 +224,23 @@ module.exports = {
       month_year: { type: Sequelize.STRING(7), allowNull: false },
       laborer_id: { type: Sequelize.INTEGER, allowNull: false },
       base_salary: { type: Sequelize.DECIMAL(10, 2), allowNull: false },
-      days_worked: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
-      days_absent: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
+      days_worked: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      days_absent: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
       salary_deductions: { type: Sequelize.DECIMAL(8, 2), defaultValue: 0 },
       bonus_amount: { type: Sequelize.DECIMAL(8, 2), defaultValue: 0 },
       final_salary: { type: Sequelize.DECIMAL(10, 2), allowNull: false },
       payment_date: { type: Sequelize.DATEONLY },
       payment_status: {
         type: Sequelize.ENUM("pending", "paid"),
-        defaultValue: "pending"
+        defaultValue: "pending",
       },
       notes: { type: Sequelize.TEXT },
     });
@@ -273,7 +275,7 @@ module.exports = {
       expected_laying_months: {
         type: Sequelize.INTEGER,
         allowNull: false,
-        defaultValue: 12
+        defaultValue: 12,
       },
     });
 
