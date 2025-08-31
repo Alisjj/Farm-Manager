@@ -131,7 +131,7 @@ frontend/
 │   │   │   ├── LoginPage.js
 │   │   │   └── ProtectedRoute.js
 │   │   │
-│   │   ├── supervisor/      # Supervisor pages
+│   │   ├── supervisor/      # Staff pages
 │   │   │   ├── DailyEntry.js
 │   │   │   ├── WorkerAssignment.js
 │   │   │   └── FeedBatchCreation.js

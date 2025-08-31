@@ -1,6 +1,7 @@
 import express from "express";
 import { body } from "express-validator";
 import authController from "../controllers/authController.js";
+import { authenticate } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -13,6 +14,9 @@ router.post(
   ],
   authController.login
 );
+
+// Get current user route (protected)
+router.get("/mean", authenticate, authController.getCurrentUser);
 
 // Logout route
 router.post("/logout", authController.logout);

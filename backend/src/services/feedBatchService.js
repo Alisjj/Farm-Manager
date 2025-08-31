@@ -89,6 +89,14 @@ const feedBatchService = {
 
     return ingredient;
   },
+
+  removeBatchIngredient: async (ingredientId) => {
+    const deleted = await BatchIngredient.destroy({
+      where: { id: ingredientId },
+    });
+    if (!deleted) throw new NotFoundError("Batch ingredient not found");
+    return true;
+  },
 };
 
 export default feedBatchService;

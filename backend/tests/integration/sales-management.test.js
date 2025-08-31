@@ -1,8 +1,5 @@
 import request from "supertest";
-import {
-  sequelize,
-  autoMigrate,
-} from "../../src/utils/database.js";
+import { sequelize, autoMigrate } from "../../src/utils/database.js";
 import app from "../../testApp.js";
 import bcrypt from "bcrypt";
 
@@ -24,22 +21,22 @@ describe("Sales Management Flow", () => {
       username: "testowner",
       password: ownerHash,
       role: "owner",
-      fullName: "Test Owner"
+      fullName: "Test Owner",
     });
 
-    const supervisorHash = await bcrypt.hash("supervisor123", 10);
+    const supervisorHash = await bcrypt.hash("staff123", 10);
     await User.create({
-      username: "testsupervisor",
+      username: "teststaff",
       password: supervisorHash,
-      role: "supervisor",
-      fullName: "Test Supervisor"
+      role: "staff",
+      fullName: "Test Staff",
     });
 
     // Create a test house
     const house = await House.create({
       houseName: "Test House",
       capacity: 1000,
-      currentBirdCount: 800
+      currentBirdCount: 800,
     });
     houseId = house.id;
     houseId = house.id;
@@ -52,10 +49,10 @@ describe("Sales Management Flow", () => {
   const auth = (token) => (req) =>
     token ? req.set("Authorization", `Bearer ${token}`) : req;
 
-  test("1. Supervisor login", async () => {
+  test("1. Staff login", async () => {
     const res = await request(app)
       .post("/api/auth/login")
-      .send({ username: "testsupervisor", password: "supervisor123" });
+      .send({ username: "teststaff", password: "staff123" });
 
     expect(res.statusCode).toBe(200);
     supervisorToken = res.body.token;
@@ -78,7 +75,7 @@ describe("Sales Management Flow", () => {
       phone: "+1234567890",
       email: "john@grocery.com",
       address: "123 Main St, City, State",
-      preferredContact: "phone"
+      preferredContact: "phone",
     });
 
     expect([200, 201]).toContain(res.statusCode);
@@ -87,9 +84,7 @@ describe("Sales Management Flow", () => {
   });
 
   test("4. Get all customers", async () => {
-    const res = await auth(supervisorToken)(
-      request(app).get("/api/customers")
-    );
+    const res = await auth(supervisorToken)(request(app).get("/api/customers"));
 
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
@@ -101,7 +96,7 @@ describe("Sales Management Flow", () => {
       request(app).put(`/api/customers/${customerId}`)
     ).send({
       customerName: "John's Updated Grocery Store",
-      phone: "+1234567891"
+      phone: "+1234567891",
     });
 
     expect(res.statusCode).toBe(200);
@@ -115,14 +110,14 @@ describe("Sales Management Flow", () => {
       saleDate: "2025-08-25",
       customerId: customerId,
       gradeAQty: 50,
-      gradeAPrice: 25.00,
+      gradeAPrice: 25.0,
       gradeBQty: 30,
-      gradeBPrice: 22.00,
+      gradeBPrice: 22.0,
       gradeCQty: 10,
-      gradeCPrice: 18.00,
-      totalAmount: (50 * 25.00) + (30 * 22.00) + (10 * 18.00), // 1250 + 660 + 180 = 2090
+      gradeCPrice: 18.0,
+      totalAmount: 50 * 25.0 + 30 * 22.0 + 10 * 18.0, // 1250 + 660 + 180 = 2090
       paymentMethod: "cash",
-      paymentStatus: "paid"
+      paymentStatus: "paid",
     });
 
     expect([200, 201]).toContain(res.statusCode);
@@ -162,7 +157,7 @@ describe("Sales Management Flow", () => {
         request(app).put(`/api/sales/${saleId}`)
       ).send({
         gradeAQty: 60,
-        paymentStatus: "paid"
+        paymentStatus: "paid",
       });
 
       expect(updateRes.statusCode).toBe(200);
@@ -188,12 +183,12 @@ describe("Sales Management Flow", () => {
       saleDate: "2025-08-26",
       customerId: customerId,
       gradeAQty: 40,
-      gradeAPrice: 25.00,
+      gradeAPrice: 25.0,
       gradeBQty: 20,
-      gradeBPrice: 22.00,
-      totalAmount: (40 * 25.00) + (20 * 22.00), // 1000 + 440 = 1440
+      gradeBPrice: 22.0,
+      totalAmount: 40 * 25.0 + 20 * 22.0, // 1000 + 440 = 1440
       paymentMethod: "transfer",
-      paymentStatus: "pending"
+      paymentStatus: "pending",
     });
 
     expect([200, 201]).toContain(res.statusCode);
@@ -215,7 +210,7 @@ describe("Sales Management Flow", () => {
       request(app).post("/api/customers")
     ).send({
       customerName: "Invalid Customer",
-      email: "invalid-email" // Invalid email format
+      email: "invalid-email", // Invalid email format
     });
 
     expect(res.statusCode).toBe(400);

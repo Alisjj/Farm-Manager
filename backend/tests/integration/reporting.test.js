@@ -25,12 +25,12 @@ describe("Reporting Flow", () => {
       fullName: "Test Owner",
     });
 
-    const supervisorHash = await bcrypt.hash("supervisor123", 10);
+    const supervisorHash = await bcrypt.hash("staff123", 10);
     await User.create({
-      username: "testsupervisor",
+      username: "teststaff",
       password: supervisorHash,
-      role: "Supervisor",
-      fullName: "Test Supervisor",
+      role: "staff",
+      fullName: "Test Staff",
     });
 
     // Create test house
@@ -105,10 +105,10 @@ describe("Reporting Flow", () => {
     ownerToken = res.body.token;
   });
 
-  test("2. Supervisor login", async () => {
+  test("2. Staff login", async () => {
     const res = await request(app)
       .post("/api/auth/login")
-      .send({ username: "testsupervisor", password: "supervisor123" });
+      .send({ username: "teststaff", password: "staff123" });
 
     expect(res.statusCode).toBe(200);
     supervisorToken = res.body.token;

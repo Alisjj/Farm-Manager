@@ -1,21 +1,27 @@
-import House from '../models/House.js';
-import { BadRequestError } from '../utils/exceptions.js';
+import House from "../models/House.js";
+import { BadRequestError } from "../utils/exceptions.js";
 
 const houseController = {
   create: async (req, res, next) => {
     try {
-      const { houseName, capacity, currentBirdCount, location, description } = req.body;
-      if (!houseName) throw new BadRequestError('House name is required');
+      const { houseName, capacity, currentBirdCount, location, description } =
+        req.body;
+      if (!houseName) throw new BadRequestError("House name is required");
 
-      if (!houseName) throw new BadRequestError('House name is required');
+      if (!houseName) throw new BadRequestError("House name is required");
 
       const house = await House.create({
         houseName,
         capacity: capacity || 1000,
         currentBirdCount: currentBirdCount || 0,
         location,
-        description
+        description,
       });
+      console.log(
+        `[${new Date().toISOString()}] Created house id=${house.id} name=${
+          house.houseName
+        }`
+      );
       res.status(201).json({ success: true, data: house });
     } catch (error) {
       next(error);
@@ -37,7 +43,9 @@ const houseController = {
       const house = await House.findByPk(id);
 
       if (!house) {
-        return res.status(404).json({ success: false, message: 'House not found' });
+        return res
+          .status(404)
+          .json({ success: false, message: "House not found" });
       }
 
       res.status(200).json({ success: true, data: house });
@@ -54,7 +62,9 @@ const houseController = {
       const [updatedCount] = await House.update(updates, { where: { id } });
 
       if (updatedCount === 0) {
-        return res.status(404).json({ success: false, message: 'House not found' });
+        return res
+          .status(404)
+          .json({ success: false, message: "House not found" });
       }
 
       const updatedHouse = await House.findByPk(id);
@@ -70,9 +80,12 @@ const houseController = {
       const deletedCount = await House.destroy({ where: { id } });
 
       if (deletedCount === 0) {
-        return res.status(404).json({ success: false, message: 'House not found' });
+        return res
+          .status(404)
+          .json({ success: false, message: "House not found" });
       }
 
+      console.log(`[${new Date().toISOString()}] Deleted house id=${id}`);
       res.status(204).json({ success: true });
     } catch (error) {
       next(error);

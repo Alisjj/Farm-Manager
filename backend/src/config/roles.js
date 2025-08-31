@@ -1,7 +1,7 @@
 // Role-based access control configuration
 export const ROLES = {
   OWNER: "owner",
-  SUPERVISOR: "supervisor",
+  SUPERVISOR: "staff",
 };
 
 export const PERMISSIONS = {

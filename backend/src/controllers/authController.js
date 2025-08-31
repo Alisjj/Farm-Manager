@@ -13,12 +13,48 @@ const authController = {
       }
 
       const { username, password } = req.body;
-      const { accessToken, refreshToken } = await authService.login(username, password);
+      const { user, accessToken, refreshToken } = await authService.login(
+        username,
+        password
+      );
 
       res.status(200).json({
         success: true,
         token: accessToken,
-        refreshToken
+        data: {
+          user,
+        },
+        refreshToken,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Get current user information.
+   */
+  getCurrentUser: async (req, res, next) => {
+    try {
+      const user = await authService.getCurrentUser(req.user.id);
+      res.status(200).json({
+        success: true,
+        data: user,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * Get current user information.
+   */
+  getCurrentUser: async (req, res, next) => {
+    try {
+      const user = await authService.getCurrentUser(req.user.id);
+      res.status(200).json({
+        success: true,
+        data: user,
       });
     } catch (error) {
       next(error);

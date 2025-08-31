@@ -4,6 +4,11 @@ const dailyLogController = {
   create: async (req, res, next) => {
     try {
       const dailyLog = await dailyLogService.createDailyLog(req.body);
+      console.log(
+        `[${new Date().toISOString()}] Created dailyLog id=${
+          dailyLog.id
+        } houseId=${dailyLog.houseId}`
+      );
       res.status(201).json({ success: true, data: dailyLog });
     } catch (error) {
       next(error);
@@ -34,6 +39,9 @@ const dailyLogController = {
         req.params.id,
         req.body
       );
+      console.log(
+        `[${new Date().toISOString()}] Updated dailyLog id=${updated.id}`
+      );
       res.status(200).json({ success: true, data: updated });
     } catch (error) {
       next(error);
@@ -43,6 +51,9 @@ const dailyLogController = {
   delete: async (req, res, next) => {
     try {
       await dailyLogService.deleteDailyLog(req.params.id);
+      console.log(
+        `[${new Date().toISOString()}] Deleted dailyLog id=${req.params.id}`
+      );
       res
         .status(200)
         .json({ success: true, message: "Daily log deleted successfully" });
