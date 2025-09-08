@@ -10,21 +10,10 @@ export const validateCreateDailyLog = [
   body("houseId")
     .isInt({ min: 1 })
     .withMessage("houseId must be a positive integer"),
-  body("logDate").custom(async (value, { req }) => {
-    const { houseId } = req.body;
-    if (houseId && value) {
-      const existingLog = await DailyLog.findOne({
-        where: {
-          logDate: value,
-          houseId: houseId,
-        },
-      });
-      if (existingLog) {
-        throw new Error("A daily log for this date and house already exists");
-      }
-    }
-    return true;
-  }),
+  body("eggsTotal")
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage("eggsTotal must be a non-negative integer"),
   body("eggsGradeA")
     .optional()
     .isInt({ min: 0 })
@@ -37,19 +26,42 @@ export const validateCreateDailyLog = [
     .optional()
     .isInt({ min: 0 })
     .withMessage("eggsGradeC must be a non-negative integer"),
+  body("crackedEggs")
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage("crackedEggs must be a non-negative integer"),
   body("feedGivenKg")
     .optional()
     .isFloat({ min: 0 })
     .withMessage("feedGivenKg must be a non-negative number"),
+  body("feedType").custom((value) => {
+    if (value === null || value === undefined || value === "") {
+      return true; // Allow null, undefined, empty string
+    }
+    if (typeof value !== "string") {
+      throw new Error("feedType must be a string");
+    }
+    if (value.length > 50) {
+      throw new Error("feedType must be max 50 characters");
+    }
+    return true;
+  }),
   body("mortalityCount")
     .optional()
     .isInt({ min: 0 })
     .withMessage("mortalityCount must be a non-negative integer"),
-  body("notes")
-    .optional()
-    .isString()
-    .isLength({ max: 1000 })
-    .withMessage("notes must be a string with max 1000 characters"),
+  body("notes").custom((value) => {
+    if (value === null || value === undefined || value === "") {
+      return true; // Allow null, undefined, empty string
+    }
+    if (typeof value !== "string") {
+      throw new Error("notes must be a string");
+    }
+    if (value.length > 1000) {
+      throw new Error("notes must be max 1000 characters");
+    }
+    return true;
+  }),
 ];
 
 export const validateUpdateDailyLog = [
@@ -256,53 +268,56 @@ export const validateId = [
 ];
 
 // Feed validators
-export const validateCreateFeedRecipe = [
-  body("recipeName").notEmpty().withMessage("recipeName is required"),
-  body("cornPercent")
-    .optional()
-    .isFloat({ min: 0, max: 100 })
-    .withMessage("cornPercent must be between 0 and 100"),
-  body("soybeanPercent")
-    .optional()
-    .isFloat({ min: 0, max: 100 })
-    .withMessage("soybeanPercent must be between 0 and 100"),
-  body("wheatBranPercent")
-    .optional()
-    .isFloat({ min: 0, max: 100 })
-    .withMessage("wheatBranPercent must be between 0 and 100"),
-  body("limestonePercent")
-    .optional()
-    .isFloat({ min: 0, max: 100 })
-    .withMessage("limestonePercent must be between 0 and 100"),
-  body("otherIngredients")
-    .optional()
-    .isObject()
-    .withMessage("otherIngredients must be an object"),
-];
-
 export const validateCreateFeedBatch = [
   body("batchDate")
     .isISO8601()
     .withMessage("batchDate must be a valid date (YYYY-MM-DD)"),
-  body("batchSizeKg")
-    .isFloat({ min: 0 })
-    .withMessage("batchSizeKg must be a positive number"),
-  body("recipeId")
-    .isInt({ min: 1 })
-    .withMessage("recipeId must be a positive integer"),
+  body("batchName")
+    .notEmpty()
+    .withMessage("batchName is required")
+    .isLength({ max: 100 })
+    .withMessage("batchName max 100 chars"),
+  body("ingredients")
+    .isArray({ min: 1 })
+    .withMessage("ingredients must be an array with at least one item"),
+  body("ingredients.*.ingredientName")
+    .notEmpty()
+    .withMessage("ingredientName is required for each ingredient"),
+  body("ingredients.*.quantityKg")
+    .isFloat({ min: 0.01 })
+    .withMessage("quantityKg must be a positive number for each ingredient"),
+  body("ingredients.*.totalCost")
+    .isFloat({ min: 0.01 })
+    .withMessage("totalCost must be a positive number for each ingredient"),
+  body("ingredients.*.supplier")
+    .optional()
+    .isLength({ max: 100 })
+    .withMessage("supplier max 100 chars"),
+  body("bagSizeKg")
+    .optional()
+    .isFloat({ min: 1 })
+    .withMessage("bagSizeKg must be at least 1 kg"),
 ];
 
 export const validateAddBatchIngredient = [
   param("id")
     .isInt({ min: 1 })
     .withMessage("batch id must be a positive integer"),
-  body("ingredientName").notEmpty().withMessage("ingredientName is required"),
-  body("amountKg")
-    .isFloat({ min: 0 })
-    .withMessage("amountKg must be a positive number"),
-  body("costPerKg")
-    .isFloat({ min: 0 })
-    .withMessage("costPerKg must be a positive number"),
+  body("ingredientName")
+    .notEmpty()
+    .withMessage("ingredientName is required")
+    .isLength({ max: 100 })
+    .withMessage("ingredientName max 100 chars"),
+  body("quantityKg")
+    .isFloat({ min: 0.01 })
+    .withMessage("quantityKg must be a positive number"),
+  body("totalCost")
+    .isFloat({ min: 0.01 })
+    .withMessage("totalCost must be a positive number"),
+  body("supplier")
+    .optional()
+    .isLength({ max: 100 })
+    .withMessage("supplier max 100 chars"),
 ];
 
 // House validators
@@ -360,6 +375,10 @@ export const validateUpdateHouse = [
 export const handleValidation = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log(
+      `[${new Date().toISOString()}] Validation errors:`,
+      JSON.stringify(errors.array(), null, 2)
+    );
     return res.status(400).json({ errors: errors.array() });
   }
   next();

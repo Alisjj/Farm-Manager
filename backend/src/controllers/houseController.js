@@ -4,23 +4,34 @@ import { BadRequestError } from "../utils/exceptions.js";
 const houseController = {
   create: async (req, res, next) => {
     try {
-      const { houseName, capacity, currentBirdCount, location, description } =
-        req.body;
-      if (!houseName) throw new BadRequestError("House name is required");
-
-      if (!houseName) throw new BadRequestError("House name is required");
-
-      const house = await House.create({
+      const {
+        name,
         houseName,
-        capacity: capacity || 1000,
-        currentBirdCount: currentBirdCount || 0,
+        capacity,
+        currentBirds,
+        currentBirdCount,
         location,
         description,
+        notes,
+        status,
+      } = req.body;
+
+      // Use name or houseName (frontend sends 'name', but we store as 'houseName')
+      const finalHouseName = name || houseName;
+      if (!finalHouseName) throw new BadRequestError("House name is required");
+
+      const house = await House.create({
+        houseName: finalHouseName,
+        capacity: capacity || 1000,
+        currentBirdCount: currentBirds || currentBirdCount || 0,
+        location,
+        description: notes || description,
+        status: status || "active",
       });
       console.log(
         `[${new Date().toISOString()}] Created house id=${house.id} name=${
           house.houseName
-        }`
+        } status=${house.status}`
       );
       res.status(201).json({ success: true, data: house });
     } catch (error) {

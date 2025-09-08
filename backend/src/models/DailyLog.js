@@ -32,10 +32,18 @@ const DailyLog = sequelize.define("DailyLog", {
     type: DataTypes.INTEGER,
     defaultValue: 0,
   },
+  crackedEggs: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
   feedGivenKg: {
     type: DataTypes.DECIMAL(8, 2),
     allowNull: false,
     defaultValue: 0,
+  },
+  feedType: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
   },
   mortalityCount: {
     type: DataTypes.INTEGER,

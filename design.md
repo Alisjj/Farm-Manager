@@ -58,26 +58,28 @@ Design and develop a management system for small-scale egg production operations
 
 #### 2.1.4 Feed Production Management
 
-- **FR-014:** System shall maintain ingredient inventory and pricing
-- **FR-015:** Feed recipes shall be configurable with percentage compositions
-- **FR-016:** System shall calculate feed batch costs automatically
-- **FR-017:** Cost per kg of produced feed shall be tracked
+- **FR-014:** System shall support flexible ingredient entry with custom names and quantities
+- **FR-015:** Feed batches shall be created with manually entered ingredients and costs
+- **FR-016:** System shall calculate total batch costs and costs per bag automatically
+- **FR-017:** Batch quantities shall be managed in tons and divided into bags
+- **FR-018:** Cost per kg and cost per bag shall be tracked and displayed
+- **FR-019:** Ingredient costs shall be entered per quantity purchased, not per kg
 
 #### 2.1.5 Labor Management
 
-- **FR-018:** System shall maintain laborer database with personal and employment information
-- **FR-019:** Staff shall record daily work assignments and attendance
-- **FR-020:** System shall track laborer performance and task completion
-- **FR-021:** Monthly payroll shall be calculated automatically based on attendance
-- **FR-022:** Salary deductions for absences shall be calculated proportionally
-- **FR-023:** Bonus payments and adjustments shall be supported
-- **FR-024:** Payroll status tracking (pending/paid) shall be maintained
-- **FR-025:** Labor cost shall be integrated into egg cost calculations
+- **FR-020:** System shall maintain laborer database with personal and employment information
+- **FR-021:** Staff shall record daily work assignments and attendance
+- **FR-022:** System shall track laborer performance and task completion
+- **FR-023:** Monthly payroll shall be calculated automatically based on attendance
+- **FR-024:** Salary deductions for absences shall be calculated proportionally
+- **FR-025:** Bonus payments and adjustments shall be supported
+- **FR-026:** Payroll status tracking (pending/paid) shall be maintained
+- **FR-027:** Labor cost shall be integrated into egg cost calculations
 
 #### 2.1.6 Cost Calculation Engine
 
-- **FR-026:** System shall calculate real-time cost per egg
-- **FR-027:** Feed costs shall be factored into egg cost calculations
+- **FR-028:** System shall calculate real-time cost per egg
+- **FR-029:** Feed costs shall be factored into egg cost calculations
 - **FR-028:** Labor costs shall be distributed per egg produced
 - **FR-029:** Fixed operating costs shall be distributed per egg
 - **FR-030:** System shall suggest selling prices based on cost + margin
@@ -264,38 +266,30 @@ CREATE TABLE sales (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Feed recipes
-CREATE TABLE feed_recipes (
-    id SERIAL PRIMARY KEY,
-    recipe_name VARCHAR(100) NOT NULL,
-    corn_percent DECIMAL(5,2) NOT NULL,
-    soybean_percent DECIMAL(5,2) NOT NULL,
-    wheat_bran_percent DECIMAL(5,2) NOT NULL,
-    limestone_percent DECIMAL(5,2) NOT NULL,
-    other_ingredients JSONB,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Feed batch production
+-- Feed batch production (simplified - no predefined recipes)
 CREATE TABLE feed_batches (
     id SERIAL PRIMARY KEY,
     batch_date DATE NOT NULL,
-    batch_size_kg DECIMAL(8,2) NOT NULL,
-    recipe_id INTEGER REFERENCES feed_recipes(id),
-    total_cost DECIMAL(10,2) NOT NULL,
+    batch_name VARCHAR(100) NOT NULL,
+    total_quantity_tons DECIMAL(8,3) NOT NULL,
+    bag_size_kg DECIMAL(6,2) NOT NULL DEFAULT 50,
+    total_bags INTEGER NOT NULL,
+    total_cost DECIMAL(12,2) NOT NULL,
+    cost_per_bag DECIMAL(10,2) NOT NULL,
     cost_per_kg DECIMAL(8,2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Ingredient usage per batch
+-- Ingredients per batch (flexible, manually entered)
 CREATE TABLE batch_ingredients (
     id SERIAL PRIMARY KEY,
-    batch_id INTEGER REFERENCES feed_batches(id),
-    ingredient_name VARCHAR(50) NOT NULL,
-    amount_kg DECIMAL(8,2) NOT NULL,
+    batch_id INTEGER REFERENCES feed_batches(id) ON DELETE CASCADE,
+    ingredient_name VARCHAR(100) NOT NULL,
+    quantity_kg DECIMAL(8,2) NOT NULL,
+    total_cost DECIMAL(10,2) NOT NULL,
     cost_per_kg DECIMAL(8,2) NOT NULL,
-    total_cost DECIMAL(10,2) NOT NULL
+    supplier VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Laborers management
@@ -441,11 +435,18 @@ PUT    /api/customers/{id}
 ### 5.4 Feed Management Endpoints
 
 ```
-GET    /api/feed-recipes
-POST   /api/feed-recipes
-GET    /api/feed-batches
-POST   /api/feed-batches
-GET    /api/batch-ingredients/{batch_id}
+GET    /api/feed/batches
+POST   /api/feed/batches
+GET    /api/feed/batches/{id}
+PUT    /api/feed/batches/{id}
+DELETE /api/feed/batches/{id}
+
+GET    /api/feed/batches/{batch_id}/ingredients
+POST   /api/feed/batches/{batch_id}/ingredients
+PUT    /api/feed/batches/{batch_id}/ingredients/{ingredient_id}
+DELETE /api/feed/batches/{batch_id}/ingredients/{ingredient_id}
+
+POST   /api/feed/batches/calculate-cost
 ```
 
 ### 5.5 Cost Calculation Endpoints

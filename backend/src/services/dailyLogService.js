@@ -7,8 +7,42 @@ const dailyLogService = {
       throw new BadRequestError("logDate and houseId are required");
     }
 
-    const created = await DailyLog.create(data);
-    return created;
+    // Check if a log already exists for this date and house
+    const existingLog = await DailyLog.findOne({
+      where: {
+        logDate: data.logDate,
+        houseId: data.houseId,
+      },
+    });
+
+    if (existingLog) {
+      // Update the existing log instead of creating a new one
+      console.log(
+        `[${new Date().toISOString()}] Updating existing daily log id=${
+          existingLog.id
+        } for house=${data.houseId} date=${data.logDate}`
+      );
+
+      const [updatedCount] = await DailyLog.update(data, {
+        where: { id: existingLog.id },
+      });
+
+      if (updatedCount > 0) {
+        const updatedLog = await DailyLog.findByPk(existingLog.id);
+        return updatedLog;
+      } else {
+        throw new BadRequestError("Failed to update existing daily log");
+      }
+    } else {
+      // Create new log
+      console.log(
+        `[${new Date().toISOString()}] Creating new daily log for house=${
+          data.houseId
+        } date=${data.logDate}`
+      );
+      const created = await DailyLog.create(data);
+      return created;
+    }
   },
 
   getAllDailyLogs: async (filters = {}) => {
