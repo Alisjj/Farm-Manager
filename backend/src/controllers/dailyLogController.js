@@ -5,11 +5,15 @@ const dailyLogController = {
     try {
       const dailyLog = await dailyLogService.createDailyLog(req.body);
       console.log(
-        `[${new Date().toISOString()}] Created dailyLog id=${
+        `[${new Date().toISOString()}] Processed dailyLog id=${
           dailyLog.id
         } houseId=${dailyLog.houseId}`
       );
-      res.status(201).json({ success: true, data: dailyLog });
+      res.status(201).json({
+        success: true,
+        data: dailyLog,
+        message: "Daily log saved successfully",
+      });
     } catch (error) {
       next(error);
     }

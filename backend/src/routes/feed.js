@@ -1,27 +1,24 @@
 import express from "express";
 import feedController from "../controllers/feedController.js";
 import {
-  validateCreateFeedRecipe,
   validateCreateFeedBatch,
   validateAddBatchIngredient,
   validateId,
   handleValidation,
 } from "../middleware/validation.js";
-import { validateFeedEstimate } from "../validations/feed.js";
+import { validateBatchCostCalculation } from "../validations/feed.js";
+import { param } from "express-validator";
+
+const validateBatchAndIngredientIds = [
+  param("batchId")
+    .isInt({ min: 1 })
+    .withMessage("batchId must be a positive integer"),
+  param("ingredientId")
+    .isInt({ min: 1 })
+    .withMessage("ingredientId must be a positive integer"),
+];
 
 const router = express.Router();
-
-// Recipes
-router.post(
-  "/recipes",
-  validateCreateFeedRecipe,
-  handleValidation,
-  feedController.createRecipe
-);
-router.get("/recipes", feedController.getAllRecipes);
-router.get("/recipes/:id", feedController.getRecipeById);
-router.put("/recipes/:id", feedController.updateRecipe);
-router.delete("/recipes/:id", feedController.deleteRecipe);
 
 // Batches
 router.post(
@@ -31,9 +28,24 @@ router.post(
   feedController.createBatch
 );
 router.get("/batches", feedController.getAllBatches);
-router.get("/batches/:id", feedController.getBatchById);
-router.put("/batches/:id", feedController.updateBatch);
-router.delete("/batches/:id", feedController.deleteBatch);
+router.get(
+  "/batches/:id",
+  validateId,
+  handleValidation,
+  feedController.getBatchById
+);
+router.put(
+  "/batches/:id",
+  validateId,
+  handleValidation,
+  feedController.updateBatch
+);
+router.delete(
+  "/batches/:id",
+  validateId,
+  handleValidation,
+  feedController.deleteBatch
+);
 
 // Batch ingredients
 router.post(
@@ -48,19 +60,25 @@ router.get(
   handleValidation,
   feedController.getBatchIngredients
 );
+router.put(
+  "/batches/:batchId/ingredients/:ingredientId",
+  validateBatchAndIngredientIds,
+  handleValidation,
+  feedController.updateIngredient
+);
 router.delete(
-  "/batches/:id/ingredients/:ingredientId",
-  validateId,
+  "/batches/:batchId/ingredients/:ingredientId",
+  validateBatchAndIngredientIds,
   handleValidation,
   feedController.deleteIngredient
 );
 
-// Estimate batch cost without creating
+// Calculate batch cost without creating
 router.post(
-  "/batches/estimate",
-  validateFeedEstimate,
+  "/batches/calculate-cost",
+  validateBatchCostCalculation,
   handleValidation,
-  feedController.estimateBatchCost
+  feedController.calculateBatchCost
 );
 
 export default router;

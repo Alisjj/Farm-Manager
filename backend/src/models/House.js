@@ -10,7 +10,7 @@ const House = sequelize.define("House", {
   houseName: {
     type: DataTypes.STRING(50),
     allowNull: false,
-    defaultValue: 'Unnamed House',
+    defaultValue: "Unnamed House",
   },
   capacity: {
     type: DataTypes.INTEGER,
@@ -29,6 +29,11 @@ const House = sequelize.define("House", {
   description: {
     type: DataTypes.TEXT,
     allowNull: true,
+  },
+  status: {
+    type: DataTypes.ENUM("active", "maintenance", "inactive"),
+    allowNull: false,
+    defaultValue: "active",
   },
 });
 

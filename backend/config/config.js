@@ -1,5 +1,3 @@
-require("dotenv").config();
-
 const DB_NAME = process.env.DB_NAME || "farm_manager";
 const DB_USER = process.env.DB_USER || "aliyusani";
 const DB_PASS = process.env.DB_PASS || "aliyusani";
@@ -7,7 +5,7 @@ const DB_HOST = process.env.DB_HOST || "127.0.0.1";
 const DB_PORT = process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 5432;
 const DB_DIALECT = process.env.DB_DIALECT || "postgres";
 
-module.exports = {
+export default {
   development: {
     username: DB_USER,
     password: DB_PASS,
