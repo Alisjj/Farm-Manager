@@ -81,4 +81,13 @@ router.post(
   feedController.calculateBatchCost
 );
 
+// Batch usage statistics
+router.get("/batches-usage", feedController.getBatchUsageStats);
+router.get(
+  "/batches/:id/usage",
+  validateId,
+  handleValidation,
+  feedController.getBatchUsageById
+);
+
 export default router;

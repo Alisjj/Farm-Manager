@@ -1,36 +1,18 @@
 // Lightweight API client for the frontend to talk to the backend
 // Uses NEXT_PUBLIC_API_URL or falls back to http://localhost:5001
 
-type BackendHouse = {
-  id: string;
-  houseName?: string;
-  name?: string;
-  capacity?: number | string;
-  currentBirdCount?: number | string;
-  location?: string;
-  createdAt?: string;
-  description?: string;
-  status?: string;
-};
-
-type FrontendHousePayload = {
-  name?: string;
-  capacity?: number;
-  currentBirds?: number;
-  location?: string;
-  status?: string;
-  notes?: string;
-};
-
-interface House {
-  id: string;
-  name: string;
-  capacity: number;
-  currentBirds: number;
-  location: string;
-  status: 'active' | 'maintenance' | 'inactive';
-  notes?: string;
-}
+import {
+  BackendHouse,
+  FrontendHousePayload,
+  House,
+  HouseStatus,
+  DailyLog,
+  Sale,
+  Customer,
+  FeedRecipe,
+  FeedBatch,
+  Ingredient,
+} from '@/types';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
@@ -73,7 +55,6 @@ async function tryRefreshToken(): Promise<boolean> {
 }
 
 async function fetchWithAuth(input: RequestInfo | URL, init?: RequestInit, retry = true) {
-  // Normalize headers and attach Authorization header without unsafe casts
   const headers = new Headers(init?.headers as HeadersInit | undefined);
   const ah = authHeader();
   Object.entries(ah).forEach(([k, v]) => {
@@ -110,18 +91,18 @@ async function handleResponse(res: Response) {
 
 // Event emitter for auth events
 class EventEmitter {
-  private events: Record<string, Function[]> = {};
+  private events: Record<string, ((...args: unknown[]) => void)[]> = {};
 
-  emit(event: string, ...args: any[]) {
+  emit(event: string, ...args: unknown[]) {
     (this.events[event] || []).forEach((fn) => fn(...args));
   }
 
-  on(event: string, fn: Function) {
+  on(event: string, fn: (...args: unknown[]) => void) {
     this.events[event] = this.events[event] || [];
     this.events[event].push(fn);
   }
 
-  off(event: string, fn: Function) {
+  off(event: string, fn: (...args: unknown[]) => void) {
     if (!this.events[event]) return;
     this.events[event] = this.events[event].filter((f) => f !== fn);
   }
@@ -132,19 +113,20 @@ export const authEvents = new EventEmitter();
 function mapBackendHouse(house: BackendHouse): House {
   return {
     id: house.id,
-    name: house.houseName || house.name || 'Unknown',
+    houseName: house.houseName || house.name || 'Unknown',
     capacity: Number(house.capacity) || 0,
     currentBirds: Number(house.currentBirdCount) || 0,
     location: house.location || 'N/A',
     status:
-      house.status === 'active' || house.status === 'maintenance' || house.status === 'inactive'
-        ? house.status
-        : 'inactive',
+      house.status === HouseStatus.ACTIVE ||
+      house.status === HouseStatus.MAINTENANCE ||
+      house.status === HouseStatus.INACTIVE
+        ? (house.status as HouseStatus)
+        : HouseStatus.INACTIVE,
     notes: house.description,
   };
 }
 
-// Daily Logs
 export async function getDailyLogs(filters: Record<string, string> = {}) {
   const params = new URLSearchParams(filters);
   const res = await fetchWithAuth(`${BASE}/api/daily-logs?${params}`);
@@ -152,7 +134,7 @@ export async function getDailyLogs(filters: Record<string, string> = {}) {
   return data;
 }
 
-export async function createDailyLog(payload: any) {
+export async function createDailyLog(payload: Partial<DailyLog>) {
   const res = await fetchWithAuth(`${BASE}/api/daily-logs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -169,9 +151,8 @@ export async function getHouses() {
 }
 
 export async function createHouse(payload: FrontendHousePayload) {
-  // map frontend shape -> backend expected fields
   const body = {
-    name: payload.name,
+    houseName: payload.houseName,
     capacity: payload.capacity,
     currentBirds: payload.currentBirds,
     location: payload.location,
@@ -191,7 +172,7 @@ export async function createHouse(payload: FrontendHousePayload) {
 
 export async function updateHouse(id: string, payload: FrontendHousePayload) {
   const body: Record<string, unknown> = {};
-  if (payload.name !== undefined) body.name = payload.name;
+  if (payload.houseName !== undefined) body.houseName = payload.houseName;
   if (payload.capacity !== undefined) body.capacity = payload.capacity;
   if (payload.currentBirds !== undefined) body.currentBirds = payload.currentBirds;
   if (payload.location !== undefined) body.location = payload.location;
@@ -215,7 +196,6 @@ export async function deleteHouse(id: string) {
   return handleResponse(res);
 }
 
-// Auth
 export async function login(credentials: { username: string; password: string }) {
   const res = await fetch(`${BASE}/api/auth/login`, {
     method: 'POST',
@@ -253,13 +233,13 @@ export async function getCurrentUser() {
   try {
     const res = await fetchWithAuth(`${BASE}/api/auth/me`);
     if (res.status === 401) {
-      return null; // Let the caller handle auth errors gracefully
+      return null;
     }
     const data = await handleResponse(res);
     return data?.user || data?.data || null;
-  } catch (error: any) {
-    if (error.message?.includes('401')) {
-      return null; // Return null for 401 errors instead of throwing
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message?.includes('401')) {
+      return null;
     }
     throw error;
   }
@@ -284,7 +264,7 @@ export async function getSales(filters: Record<string, string> = {}) {
   return handleResponse(res);
 }
 
-export async function createSale(payload: any) {
+export async function createSale(payload: Partial<Sale>) {
   const res = await fetchWithAuth(`${BASE}/api/sales`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -299,7 +279,7 @@ export async function getCustomers() {
   return handleResponse(res);
 }
 
-export async function createCustomer(payload: any) {
+export async function createCustomer(payload: Partial<Customer>) {
   const res = await fetchWithAuth(`${BASE}/api/customers`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -321,7 +301,7 @@ export async function getFeedRecipes() {
   return handleResponse(res);
 }
 
-export async function createFeedRecipe(payload: any) {
+export async function createFeedRecipe(payload: Partial<FeedRecipe>) {
   const res = await fetchWithAuth(`${BASE}/api/feed/recipes`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -330,7 +310,7 @@ export async function createFeedRecipe(payload: any) {
   return handleResponse(res);
 }
 
-export async function updateFeedRecipe(id: string, payload: any) {
+export async function updateFeedRecipe(id: string, payload: Partial<FeedRecipe>) {
   const res = await fetchWithAuth(`${BASE}/api/feed/recipes/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -352,7 +332,7 @@ export async function getFeedBatches(filters: Record<string, string> = {}) {
   return handleResponse(res);
 }
 
-export async function createFeedBatch(payload: any) {
+export async function createFeedBatch(payload: Partial<FeedBatch>) {
   const res = await fetchWithAuth(`${BASE}/api/feed/batches`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -361,7 +341,7 @@ export async function createFeedBatch(payload: any) {
   return handleResponse(res);
 }
 
-export async function updateFeedBatch(id: string, payload: any) {
+export async function updateFeedBatch(id: string, payload: Partial<FeedBatch>) {
   const res = await fetchWithAuth(`${BASE}/api/feed/batches/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -382,7 +362,7 @@ export async function getBatchIngredients(batchId: string) {
   return handleResponse(res);
 }
 
-export async function addBatchIngredient(batchId: string, payload: any) {
+export async function addBatchIngredient(batchId: string, payload: Partial<Ingredient>) {
   const res = await fetchWithAuth(`${BASE}/api/feed/batches/${batchId}/ingredients`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -391,8 +371,8 @@ export async function addBatchIngredient(batchId: string, payload: any) {
   return handleResponse(res);
 }
 
-export async function estimateBatchCost(payload: any) {
-  const res = await fetchWithAuth(`${BASE}/api/feed/batches/estimate`, {
+export async function estimateBatchCost(payload: { ingredients: Ingredient[] }) {
+  const res = await fetchWithAuth(`${BASE}/api/feed/estimate-cost`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -400,11 +380,21 @@ export async function estimateBatchCost(payload: any) {
   return handleResponse(res);
 }
 
-export async function calculateFeedBatchCost(payload: any) {
+export async function calculateFeedBatchCost(payload: Partial<FeedBatch>) {
   const res = await fetchWithAuth(`${BASE}/api/feed/batches/calculate-cost`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+  return handleResponse(res);
+}
+
+export async function getFeedBatchUsageStats() {
+  const res = await fetchWithAuth(`${BASE}/api/feed/batches-usage`);
+  return handleResponse(res);
+}
+
+export async function getFeedBatchUsageById(id: string) {
+  const res = await fetchWithAuth(`${BASE}/api/feed/batches/${id}/usage`);
   return handleResponse(res);
 }

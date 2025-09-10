@@ -1,3 +1,4 @@
+import logger from "../config/logger.js";
 import dailyLogService from "../services/dailyLogService.js";
 
 const dailyLogController = {

@@ -16,7 +16,6 @@ const houseController = {
         status,
       } = req.body;
 
-      // Use name or houseName (frontend sends 'name', but we store as 'houseName')
       const finalHouseName = name || houseName;
       if (!finalHouseName) throw new BadRequestError("House name is required");
 
@@ -28,11 +27,7 @@ const houseController = {
         description: notes || description,
         status: status || "active",
       });
-      console.log(
-        `[${new Date().toISOString()}] Created house id=${house.id} name=${
-          house.houseName
-        } status=${house.status}`
-      );
+
       res.status(201).json({ success: true, data: house });
     } catch (error) {
       next(error);

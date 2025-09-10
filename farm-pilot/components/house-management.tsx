@@ -25,32 +25,22 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Egg, Plus, Edit, Trash2, MapPin, Users } from 'lucide-react';
-
-interface House {
-  id: string;
-  name: string;
-  capacity: number;
-  currentBirds: number;
-  location: string;
-  status: 'active' | 'maintenance' | 'inactive';
-  notes?: string;
-}
+import { House as HouseType, HouseStatus, House } from '@/types';
 
 export function HouseManagement() {
-  const [houses, setHouses] = useState<House[]>([]);
+  const [houses, setHouses] = useState<HouseType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingHouse, setEditingHouse] = useState<House | null>(null);
+  const [editingHouse, setEditingHouse] = useState<HouseType | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     capacity: '',
     currentBirds: '',
     location: '',
-    status: 'active' as House['status'],
+    status: HouseStatus.ACTIVE as HouseType['status'],
     notes: '',
   });
 
-  // Load houses from backend on component mount, fall back to localStorage/defaults
   useEffect(() => {
     let mounted = true;
     setIsLoading(true);
@@ -60,51 +50,13 @@ export function HouseManagement() {
         setHouses(data);
         try {
           localStorage.setItem('farm-pilot-houses', JSON.stringify(data));
-        } catch {
-          // ignore localStorage write errors
-        }
+        } catch {}
       })
       .catch(() => {
-        // fallback to localStorage or defaults
         const savedHouses = localStorage.getItem('farm-pilot-houses');
         if (savedHouses) {
           setHouses(JSON.parse(savedHouses));
         } else {
-          const defaultHouses: House[] = [
-            {
-              id: 'house-1',
-              name: 'House 1',
-              capacity: 500,
-              currentBirds: 500,
-              location: 'North Section',
-              status: 'active',
-              notes: 'Main laying house',
-            },
-            {
-              id: 'house-2',
-              name: 'House 2',
-              capacity: 750,
-              currentBirds: 750,
-              location: 'East Section',
-              status: 'active',
-              notes: 'Newer facility with automated systems',
-            },
-            {
-              id: 'house-3',
-              name: 'House 3',
-              capacity: 600,
-              currentBirds: 600,
-              location: 'South Section',
-              status: 'active',
-              notes: 'Recently renovated',
-            },
-          ];
-          setHouses(defaultHouses);
-          try {
-            localStorage.setItem('farm-pilot-houses', JSON.stringify(defaultHouses));
-          } catch {
-            // ignore
-          }
         }
       })
       .finally(() => setIsLoading(false));
@@ -114,7 +66,6 @@ export function HouseManagement() {
     };
   }, []);
 
-  // Save houses to localStorage whenever houses change
   useEffect(() => {
     if (houses.length > 0) {
       localStorage.setItem('farm-pilot-houses', JSON.stringify(houses));
@@ -127,7 +78,7 @@ export function HouseManagement() {
       capacity: '',
       currentBirds: '',
       location: '',
-      status: 'active',
+      status: HouseStatus.ACTIVE,
       notes: '',
     });
     setEditingHouse(null);
@@ -138,7 +89,7 @@ export function HouseManagement() {
 
     const houseData: House = {
       id: editingHouse?.id || `house-${Date.now()}`,
-      name: formData.name,
+      houseName: formData.name,
       capacity: Number.parseInt(formData.capacity),
       currentBirds: Number.parseInt(formData.currentBirds),
       location: formData.location,
@@ -148,7 +99,7 @@ export function HouseManagement() {
 
     setIsLoading(true);
     const payload: Record<string, unknown> = {
-      name: houseData.name,
+      houseName: houseData.houseName,
       capacity: houseData.capacity,
       currentBirds: houseData.currentBirds,
       location: houseData.location,
@@ -179,7 +130,7 @@ export function HouseManagement() {
   const handleEdit = (house: House) => {
     setEditingHouse(house);
     setFormData({
-      name: house.name,
+      name: house.houseName,
       capacity: house.capacity.toString(),
       currentBirds: house.currentBirds.toString(),
       location: house.location,
@@ -377,7 +328,6 @@ export function HouseManagement() {
         </Card>
       </div>
 
-      {/* Houses Table */}
       <Card>
         <CardHeader>
           <CardTitle>Houses Overview</CardTitle>
@@ -398,7 +348,7 @@ export function HouseManagement() {
             <TableBody>
               {houses.map((house) => (
                 <TableRow key={house.id}>
-                  <TableCell className="font-medium">{house.name}</TableCell>
+                  <TableCell className="font-medium">{house.houseName}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <MapPin className="h-3 w-3 text-muted-foreground" />

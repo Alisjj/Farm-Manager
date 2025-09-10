@@ -13,6 +13,7 @@ import staffRoutes from "./src/routes/staff.js";
 import { autoMigrate } from "./src/utils/database.js";
 import errorHandler from "./src/middleware/errorHandler.js";
 import requestLogger from "./src/middleware/logger.js";
+import logger from "./src/config/logger.js";
 const app = express();
 
 // CORS configuration
@@ -57,13 +58,15 @@ const PORT = process.env.PORT || 5001;
 (async () => {
   try {
     await autoMigrate();
-    console.log("Automigration completed.");
+    logger.info("Automigration completed.");
 
     app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+      logger.info(`Server is running on port ${PORT}`);
+      logger.info(`Environment: ${process.env.NODE_ENV || "development"}`);
+      logger.info(`Log level: ${logger.level}`);
     });
   } catch (err) {
-    console.error("Failed to start the server:", err);
+    logger.error("Failed to start the server:", err);
   }
 })();
 

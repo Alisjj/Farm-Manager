@@ -1,32 +1,35 @@
-import onFinished from "on-finished";
+import morgan from "morgan";
+import logger from "../config/logger.js";
 
-function now() {
-  return new Date().toISOString();
-}
-
-export default function requestLogger(req, res, next) {
-  const start = process.hrtime();
-  const { method, originalUrl } = req;
-
-  // Log request start
-  console.log(`[${now()}] --> ${method} ${originalUrl}`);
-
-  // Log body for POST/PUT (avoid logging sensitive fields)
-  if (method === "POST" || method === "PUT") {
+morgan.token("body", (req) => {
+  if (req.method === "POST" || req.method === "PUT") {
     try {
-      console.log(`[${now()}]     body:`, JSON.stringify(req.body));
+      const body = { ...req.body };
+      if (body.password) body.password = "[HIDDEN]";
+      if (body.refreshToken) body.refreshToken = "[HIDDEN]";
+      return JSON.stringify(body);
     } catch (e) {
-      console.log(`[${now()}]     body: <unserializable>`);
+      return "<unserializable>";
     }
   }
+  return "";
+});
 
-  onFinished(res, () => {
-    const diff = process.hrtime(start);
-    const ms = (diff[0] * 1e3 + diff[1] / 1e6).toFixed(1);
-    console.log(
-      `[${now()}] <-- ${method} ${originalUrl} ${res.statusCode} - ${ms}ms`
-    );
-  });
+const developmentFormat =
+  ":method :url :status :res[content-length] - :response-time ms :body";
 
-  next();
-}
+const productionFormat =
+  ':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"';
+
+const requestLogger = morgan(
+  process.env.NODE_ENV === "production" ? productionFormat : developmentFormat,
+  {
+    stream: {
+      write: (message) => {
+        logger.http(message.trim());
+      },
+    },
+  }
+);
+
+export default requestLogger;
