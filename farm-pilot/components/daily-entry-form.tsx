@@ -16,49 +16,25 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { CalendarDays, Home, Egg, Package, Users, AlertCircle } from 'lucide-react';
-import { createDailyLog, getHouses, getDailyLogs, getLaborers, listStaff } from '@/lib/api';
+import {
+  createDailyLog,
+  getHouses,
+  getDailyLogs,
+  getLaborers,
+  listStaff,
+  getFeedBatches,
+  getFeedBatchUsageStats,
+} from '@/lib/api';
+import { House, DailyLog, Worker, TodaySummary } from '@/types';
+import { FeedBatch } from '@/types/entities/feed';
 
-interface House {
-  id: number;
-  name: string;
-  currentBirds: number;
-  capacity: number;
-  location: string;
-  status: string;
-}
-
-interface DailyLog {
-  id: number;
-  logDate: string;
-  houseId: number;
-  eggsTotal: number;
-  eggsGradeA: number;
-  eggsGradeB: number;
-  eggsGradeC: number;
-  feedGivenKg: number;
-  mortalityCount: number;
-  notes?: string;
-  House?: House;
-}
-
-interface Worker {
-  id: number;
-  name: string;
-  fullName?: string;
-  role: string;
-  status: string;
-  tasks?: string[];
-}
-
-interface TodaySummary {
-  totalEggs: number;
-  housesLogged: number;
-  totalHouses: number;
-  houseBreakdown: Array<{
-    houseId: number;
-    houseName: string;
-    eggs: number;
-  }>;
+interface BatchUsageStats {
+  batch_id: string;
+  batch_name: string;
+  total_bags: number;
+  used_bags: number;
+  remaining_bags: number;
+  usage_percentage: number;
 }
 
 export function DailyEntryForm() {
@@ -66,6 +42,29 @@ export function DailyEntryForm() {
   const [houses, setHouses] = useState<House[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Feed batch state
+  const [feedBatches, setFeedBatches] = useState<FeedBatch[]>([]);
+  const [batchUsageStats, setBatchUsageStats] = useState<BatchUsageStats[]>([]);
+
+  const loadFeedBatches = async () => {
+    try {
+      const [batchesResponse, usageStatsResponse] = await Promise.all([
+        getFeedBatches(),
+        getFeedBatchUsageStats(),
+      ]);
+      setFeedBatches(batchesResponse?.data || []);
+      setBatchUsageStats(usageStatsResponse?.data || []);
+    } catch (error) {
+      console.error('Failed to load feed batches:', error);
+      setFeedBatches([]);
+      setBatchUsageStats([]);
+    }
+  };
+
+  useEffect(() => {
+    loadFeedBatches();
+  }, []);
 
   // Dynamic data states
   const [todaySummary, setTodaySummary] = useState<TodaySummary>({
@@ -82,11 +81,56 @@ export function DailyEntryForm() {
     gradeB: '',
     gradeC: '',
     crackedEggs: '',
-    feedGiven: '',
-    feedType: '',
     mortalityCount: '',
+    feedBatchId: '',
+    feedBagsUsed: '',
     notes: '',
   });
+
+  const [feedBagsError, setFeedBagsError] = useState<string>('');
+
+  // Validation function to check if bags used exceeds remaining
+  const validateFeedBags = () => {
+    if (!formData.feedBatchId || !formData.feedBagsUsed) return true;
+
+    const selectedBatchUsage = batchUsageStats.find(
+      (stats) =>
+        stats.batch_id === formData.feedBatchId ||
+        stats.batch_id === parseInt(formData.feedBatchId).toString()
+    );
+
+    if (!selectedBatchUsage) return true;
+
+    const bagsUsed = parseFloat(formData.feedBagsUsed);
+    if (isNaN(bagsUsed) || bagsUsed <= 0) return true;
+
+    return bagsUsed <= selectedBatchUsage.remaining_bags;
+  };
+
+  // Form validation - checks all required fields and validation rules
+  const isFormValid = () => {
+    if (!selectedHouse) return false;
+    if (!validateFeedBags()) return false;
+    if (feedBagsError) return false;
+    return true;
+  };
+
+  useEffect(() => {
+    if (formData.feedBatchId && batchUsageStats.length > 0) {
+      const selectedBatchUsage = batchUsageStats.find(
+        (stats) => stats.batch_id === formData.feedBatchId
+      );
+
+      if (selectedBatchUsage && selectedBatchUsage.remaining_bags <= 0) {
+        setFormData((prev) => ({
+          ...prev,
+          feedBatchId: '',
+          feedBagsUsed: '',
+        }));
+        alert('The selected feed batch is now finished and has been cleared from your selection.');
+      }
+    }
+  }, [batchUsageStats, formData.feedBatchId]);
 
   const [eggData, setEggData] = useState({
     gradeA: '',
@@ -95,7 +139,32 @@ export function DailyEntryForm() {
     total: 0,
   });
 
-  // Load data on component mount
+  const handleFeedBagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData((prev) => ({ ...prev, feedBagsUsed: value }));
+
+    // Clear previous error
+    setFeedBagsError('');
+
+    // Only validate if we have a value and batch selected
+    if (value && formData.feedBatchId) {
+      const numValue = parseFloat(value);
+      const selectedBatch = batchUsageStats.find(
+        (stats) =>
+          stats.batch_id === formData.feedBatchId ||
+          stats.batch_id === parseInt(formData.feedBatchId).toString()
+      );
+
+      if (selectedBatch && !isNaN(numValue) && numValue > 0) {
+        if (numValue > selectedBatch.remaining_bags) {
+          setFeedBagsError(
+            `Cannot use ${numValue} bags. Only ${selectedBatch.remaining_bags} bags remaining in this batch.`
+          );
+        }
+      }
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, [houses.length]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -130,16 +199,18 @@ export function DailyEntryForm() {
       const todaysLogs = response?.data || [];
 
       let totalEggs = 0;
-      const houseBreakdown: Array<{ houseId: number; houseName: string; eggs: number }> = [];
+      const houseBreakdown: Array<{ houseId: string; houseName: string; eggs: number }> = [];
 
       todaysLogs.forEach((log: DailyLog) => {
         totalEggs += log.eggsTotal || 0;
         houseBreakdown.push({
           houseId: log.houseId,
-          houseName: log.House?.name || `House ${log.houseId}`,
+          houseName: log.House?.houseName || `House ${log.houseId}`,
           eggs: log.eggsTotal || 0,
         });
       });
+
+      console.log(todaysLogs);
 
       setTodaySummary({
         totalEggs,
@@ -154,15 +225,14 @@ export function DailyEntryForm() {
 
   const loadWorkers = async () => {
     try {
-      // Try to get staff first, then laborers
       const [staffResponse, laborersResponse] = await Promise.all([
         listStaff().catch(() => ({ data: [] })),
         getLaborers().catch(() => ({ data: [] })),
       ]);
 
       const staff = (staffResponse?.data || []).map(
-        (s: { id: number; fullName?: string; username?: string }) => ({
-          id: s.id,
+        (s: { id: string; fullName?: string; username?: string }) => ({
+          id: String(s.id),
           name: s.fullName || s.username || 'Unknown',
           role: 'Staff',
           status: 'present', // This would need to come from attendance/work assignment API
@@ -171,8 +241,8 @@ export function DailyEntryForm() {
       );
 
       const laborers = (laborersResponse?.data || []).map(
-        (l: { id: number; name: string; role?: string }) => ({
-          id: l.id,
+        (l: { id: string; name: string; role?: string }) => ({
+          id: String(l.id),
           name: l.name,
           role: l.role || 'Laborer',
           status: 'present', // This would need to come from attendance API
@@ -188,16 +258,12 @@ export function DailyEntryForm() {
 
   const loadAlerts = async () => {
     try {
-      // This would typically come from a dedicated alerts API
-      // For now, we'll generate basic alerts based on data
       const alertMessages: string[] = [];
 
-      // Check feed stock (placeholder logic)
       if (Math.random() > 0.5) {
         alertMessages.push('Feed stock running low - consider ordering more');
       }
 
-      // Check for vaccination schedules
       if (Math.random() > 0.7) {
         alertMessages.push('Vaccination due for some houses next week');
       }
@@ -229,7 +295,7 @@ export function DailyEntryForm() {
 
       const payload = {
         logDate: new Date().toISOString().split('T')[0], // Today's date
-        houseId: parseInt(selectedHouse),
+        houseId: selectedHouse || undefined,
         eggsGradeA: parseInt(formData.gradeA) || 0,
         eggsGradeB: parseInt(formData.gradeB) || 0,
         eggsGradeC: parseInt(formData.gradeC) || 0,
@@ -238,26 +304,26 @@ export function DailyEntryForm() {
           (parseInt(formData.gradeB) || 0) +
           (parseInt(formData.gradeC) || 0),
         crackedEggs: parseInt(formData.crackedEggs) || 0,
-        feedGivenKg: parseFloat(formData.feedGiven) || 0,
-        feedType: formData.feedType || null,
+        // feed details are tracked via feed batch elsewhere; omit feedGiven/feedType
         mortalityCount: parseInt(formData.mortalityCount) || 0,
+        feedBatchId: formData.feedBatchId ? parseInt(formData.feedBatchId) : undefined,
+        feedBagsUsed: formData.feedBagsUsed ? parseInt(formData.feedBagsUsed) : undefined,
         notes: formData.notes || null,
-      };
+      } as unknown as DailyLog;
 
       const result = await createDailyLog(payload);
 
       if (result?.success) {
         const message = result?.message || 'Daily log submitted successfully!';
         alert(message);
-        // Reset form
         setFormData({
           gradeA: '',
           gradeB: '',
           gradeC: '',
           crackedEggs: '',
-          feedGiven: '',
-          feedType: '',
           mortalityCount: '',
+          feedBatchId: '',
+          feedBagsUsed: '',
           notes: '',
         });
         setEggData({
@@ -272,9 +338,23 @@ export function DailyEntryForm() {
       } else {
         alert('Failed to submit daily log. Please try again.');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Submit error:', error);
-      alert('Failed to submit daily log. Please try again.');
+
+      // Extract error message from backend response
+      let errorMessage = 'Failed to submit daily log. Please try again.';
+      if (error && typeof error === 'object' && 'response' in error) {
+        const apiError = error as { response?: { data?: { message?: string } } };
+        if (apiError.response?.data?.message) {
+          errorMessage = apiError.response.data.message;
+        }
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        const basicError = error as { message: string };
+        errorMessage = basicError.message;
+      }
+
+      alert(errorMessage);
+      setFeedBagsError(errorMessage); // Also show in form
     } finally {
       setSubmitting(false);
     }
@@ -291,7 +371,6 @@ export function DailyEntryForm() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Main Entry Form */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -318,8 +397,8 @@ export function DailyEntryForm() {
                     </SelectTrigger>
                     <SelectContent>
                       {houses.map((house) => (
-                        <SelectItem key={house.id} value={house.id.toString()}>
-                          {house.name} ({house.currentBirds} birds)
+                        <SelectItem key={house.id} value={house.id}>
+                          {house.houseName || `House ${house.id}`} ({house.currentBirds} birds)
                         </SelectItem>
                       ))}
                       {houses.length === 0 && !loading && (
@@ -407,19 +486,6 @@ export function DailyEntryForm() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="feed-given">Feed Given (kg)</Label>
-                      <Input
-                        id="feed-given"
-                        type="number"
-                        step="0.1"
-                        placeholder="0.0"
-                        value={formData.feedGiven}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, feedGiven: e.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
                       <Label htmlFor="mortality">Mortality Count</Label>
                       <Input
                         id="mortality"
@@ -431,9 +497,6 @@ export function DailyEntryForm() {
                         }
                       />
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="cracked-eggs">Cracked Eggs</Label>
                       <Input
@@ -446,17 +509,119 @@ export function DailyEntryForm() {
                         }
                       />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="feed-type">Feed Type</Label>
-                      <Input
-                        id="feed-type"
-                        type="text"
-                        placeholder="e.g. Layer mash"
-                        value={formData.feedType}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, feedType: e.target.value }))
-                        }
-                      />
+                      <Label htmlFor="feed-batch">Feed Batch</Label>
+                      <Select
+                        value={formData.feedBatchId}
+                        onValueChange={(value) => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            feedBatchId: value,
+                            feedBagsUsed: '',
+                          }));
+                          setFeedBagsError(''); // Clear any error
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select feed batch" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.isArray(feedBatches) &&
+                            feedBatches.map((batch) => {
+                              const usageInfo = batchUsageStats.find(
+                                (stats) => stats.batch_id === batch.id.toString()
+                              );
+                              const isFinished = usageInfo && usageInfo.remaining_bags <= 0;
+
+                              return (
+                                <SelectItem
+                                  key={batch.id}
+                                  value={batch.id.toString()}
+                                  disabled={isFinished}
+                                >
+                                  <div className="flex justify-between items-center w-full">
+                                    <span
+                                      className={isFinished ? 'text-gray-400 line-through' : ''}
+                                    >
+                                      {batch.batchName} (${batch.costPerBag}/bag)
+                                    </span>
+                                    {usageInfo && (
+                                      <div className="flex items-center gap-2 ml-2">
+                                        <span
+                                          className={`text-sm font-medium ${
+                                            isFinished ? 'text-gray-400' : 'text-blue-600'
+                                          }`}
+                                        >
+                                          {usageInfo.remaining_bags} bags remaining
+                                        </span>
+                                        {isFinished ? (
+                                          <Badge variant="secondary" className="text-xs">
+                                            Finished
+                                          </Badge>
+                                        ) : (
+                                          usageInfo.usage_percentage >= 80 && (
+                                            <Badge variant="destructive" className="text-xs">
+                                              Low Stock
+                                            </Badge>
+                                          )
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              );
+                            })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="feed-bags">Feed Bags Used</Label>
+                      {(() => {
+                        const selectedBatchUsage = batchUsageStats.find(
+                          (stats) =>
+                            stats.batch_id === formData.feedBatchId ||
+                            stats.batch_id === parseInt(formData.feedBatchId).toString()
+                        );
+
+                        return (
+                          <>
+                            <Input
+                              id="feed-bags"
+                              type="number"
+                              placeholder="0"
+                              min={0}
+                              step={0.1}
+                              max={
+                                selectedBatchUsage ? selectedBatchUsage.remaining_bags : undefined
+                              }
+                              value={formData.feedBagsUsed}
+                              className={
+                                feedBagsError || !validateFeedBags()
+                                  ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                  : ''
+                              }
+                              onChange={handleFeedBagsChange}
+                              disabled={!formData.feedBatchId}
+                            />
+
+                            {selectedBatchUsage && (
+                              <p className="text-sm text-muted-foreground">
+                                Maximum available: {selectedBatchUsage.remaining_bags} bags
+                              </p>
+                            )}
+
+                            {/* Error message */}
+                            {feedBagsError && (
+                              <p role="alert" className="text-sm text-red-600 font-medium">
+                                {feedBagsError}
+                              </p>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -472,8 +637,21 @@ export function DailyEntryForm() {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full" size="lg" disabled={submitting}>
-                  {submitting ? 'Submitting...' : 'Submit Daily Entry'}
+                <Button
+                  type="submit"
+                  className="w-full"
+                  size="lg"
+                  disabled={submitting || !isFormValid()}
+                >
+                  {submitting
+                    ? 'Submitting...'
+                    : !isFormValid()
+                    ? feedBagsError
+                      ? 'Fix Feed Bags Error to Submit'
+                      : !selectedHouse
+                      ? 'Select a House to Submit'
+                      : 'Fix Errors to Submit'
+                    : 'Submit Daily Entry'}
                 </Button>
               </form>
             </CardContent>
@@ -482,7 +660,6 @@ export function DailyEntryForm() {
 
         {/* Side Panel */}
         <div className="space-y-6">
-          {/* Today's Summary - Now Dynamic */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -523,7 +700,6 @@ export function DailyEntryForm() {
             </CardContent>
           </Card>
 
-          {/* Worker Assignment - Now Dynamic */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -551,8 +727,10 @@ export function DailyEntryForm() {
                         </div>
                       )}
                     </div>
-                    <Badge variant={worker.status === 'present' ? 'default' : 'destructive'}>
-                      {worker.status}
+                    <Badge
+                      variant={worker.attendaceStatus === 'present' ? 'default' : 'destructive'}
+                    >
+                      {worker.attendaceStatus}
                     </Badge>
                   </div>
                 ))

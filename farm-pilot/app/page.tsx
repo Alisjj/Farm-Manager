@@ -76,8 +76,8 @@ function FarmPilotApp() {
       } catch {}
       setLoginLoading(true);
       try {
-        const res = await apiLogin(loginForm.username, loginForm.password);
-        // debug: show API login response shape
+        const res = await apiLogin({ username: loginForm.username, password: loginForm.password });
+        // debug: show API login response shaps
         try {
           console.log('[auth] apiLogin response', res);
         } catch {}

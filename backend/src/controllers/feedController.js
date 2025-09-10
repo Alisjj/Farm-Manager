@@ -1,4 +1,5 @@
 import feedBatchService from "../services/feedBatchService.js";
+import feedBatchStatsService from "../services/feedBatchStatsService.js";
 
 const feedController = {
   // Batches
@@ -108,6 +109,28 @@ const feedController = {
         bagSizeKg || 50
       );
       res.json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // Get batch usage statistics
+  getBatchUsageStats: async (req, res, next) => {
+    try {
+      const stats = await feedBatchStatsService.getAllBatchUsageStats();
+      res.json({ success: true, data: stats });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // Get individual batch usage stats
+  getBatchUsageById: async (req, res, next) => {
+    try {
+      const stats = await feedBatchStatsService.getBatchUsageStats(
+        req.params.id
+      );
+      res.json({ success: true, data: stats });
     } catch (err) {
       next(err);
     }

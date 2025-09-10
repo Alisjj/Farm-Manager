@@ -1,6 +1,7 @@
 import { Sequelize } from "sequelize";
 import fs from "fs";
 import path from "path";
+import logger from "../config/logger.js";
 
 const DB_NAME = process.env.DB_NAME || "farm_manager";
 const DB_USER = process.env.DB_USER || "aliyusani";
@@ -16,7 +17,7 @@ if (DB_DIALECT === "sqlite") {
   sequelize = new Sequelize({
     dialect: "sqlite",
     storage: DB_STORAGE,
-    logging: LOG_SQL ? console.log : false,
+    logging: LOG_SQL ? (msg) => logger.debug(`[SQL] ${msg}`) : false,
     pool: {
       max: 5,
       min: 0,
@@ -33,7 +34,7 @@ if (DB_DIALECT === "sqlite") {
     host: DB_HOST,
     port: DB_PORT,
     dialect: DB_DIALECT,
-    logging: LOG_SQL ? console.log : false,
+    logging: LOG_SQL ? (msg) => logger.debug(`[SQL] ${msg}`) : false,
     pool: {
       max: 10,
       min: 0,
@@ -51,11 +52,11 @@ export async function connect() {
   try {
     await sequelize.authenticate();
     if (process.env.NODE_ENV !== "test") {
-      console.log("Database connected successfully.");
+      logger.info("Database connected successfully.");
     }
     return true;
   } catch (err) {
-    console.error("Database connection failed:", err);
+    logger.error("Database connection failed:", err);
     throw err;
   }
 }
@@ -85,19 +86,22 @@ export function initModels(modelsDir = path.join(__dirname, "..", "models")) {
 
 export async function autoMigrate() {
   try {
+    // Import associations to set up model relationships
+    await import("../models/associations.js");
+
     if (process.env.USE_MIGRATIONS === "true") {
       try {
         const { execSync } = await import("child_process");
         if (process.env.NODE_ENV !== "test") {
-          console.log("Running migrations via sequelize-cli...");
+          logger.info("Running migrations via sequelize-cli...");
         }
         execSync("npx sequelize db:migrate", { stdio: "inherit" });
         if (process.env.NODE_ENV !== "test") {
-          console.log("Migrations completed.");
+          logger.info("Migrations completed.");
         }
         return;
       } catch (mErr) {
-        console.error("Failed to run sequelize migrations:", mErr);
+        logger.error("Failed to run sequelize migrations:", mErr);
       }
     }
 

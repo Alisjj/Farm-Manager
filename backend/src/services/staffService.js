@@ -6,7 +6,7 @@ const staffService = {
   list: async () => {
     return User.findAll({
       where: { role: ROLES.SUPERVISOR },
-      attributes: ["id", "username", "full_name", "isActive", "created_at"],
+      attributes: ["id", "username", "isActive", "createdAt"],
     });
   },
 
@@ -18,12 +18,10 @@ const staffService = {
       username,
       password: hash,
       role: ROLES.SUPERVISOR,
-      full_name: fullName,
     });
     return {
       id: user.id,
       username: user.username,
-      full_name: user.full_name,
       isActive: user.isActive,
     };
   },
@@ -34,13 +32,12 @@ const staffService = {
     if (payload.password) {
       payload.password = await bcrypt.hash(payload.password, 10);
     }
-    if (payload.fullName) payload.full_name = payload.fullName;
+    // Remove fullName since it doesn't exist in the model
     delete payload.fullName;
     await user.update(payload);
     return {
       id: user.id,
       username: user.username,
-      full_name: user.full_name,
       isActive: user.isActive,
     };
   },

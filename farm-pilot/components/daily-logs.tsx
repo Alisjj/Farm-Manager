@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getDailyLogs, deleteDailyLog } from '@/lib/api';
+import { getDailyLogs } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Table,
@@ -11,15 +11,27 @@ import {
   TableBody,
   TableCell,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 
 type Log = {
   id: string | number;
   logDate: string;
   houseId: number | string;
   eggsCollected: number;
+  eggsTotal: number;
   feedConsumedKg: number;
+  feedGivenKg?: number;
+  feedBagsUsed?: number;
+  feedBatchId?: number;
   notes?: string;
+  House?: {
+    id: number;
+    houseName: string;
+  };
+  FeedBatch?: {
+    id: number;
+    batchName: string;
+    costPerBag: number;
+  };
 };
 
 export function DailyLogs() {
@@ -47,16 +59,6 @@ export function DailyLogs() {
     };
   }, []);
 
-  const handleDelete = async (id: string | number) => {
-    try {
-      await deleteDailyLog(String(id));
-      setLogs((s) => s.filter((l) => String(l.id) !== String(id)));
-    } catch (err) {
-      console.error('Delete failed', err);
-      setError('Failed to delete log');
-    }
-  };
-
   return (
     <div>
       <Card>
@@ -80,8 +82,9 @@ export function DailyLogs() {
                   <TableHead>House</TableHead>
                   <TableHead>Eggs</TableHead>
                   <TableHead>Feed (kg)</TableHead>
+                  <TableHead>Feed Batch</TableHead>
+                  <TableHead>Bags Used</TableHead>
                   <TableHead>Notes</TableHead>
-                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -89,15 +92,12 @@ export function DailyLogs() {
                   <TableRow key={String(log.id)}>
                     <TableCell className="font-medium">{String(log.id)}</TableCell>
                     <TableCell>{log.logDate}</TableCell>
-                    <TableCell>{log.houseId}</TableCell>
-                    <TableCell>{log.eggsCollected}</TableCell>
-                    <TableCell>{log.feedConsumedKg}</TableCell>
-                    <TableCell>{log.notes}</TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm" onClick={() => handleDelete(log.id)}>
-                        Delete
-                      </Button>
-                    </TableCell>
+                    <TableCell>{log.House?.houseName || `House ${log.houseId}`}</TableCell>
+                    <TableCell>{log.eggsTotal || log.eggsCollected || 0}</TableCell>
+                    <TableCell>{log.feedConsumedKg || log.feedGivenKg || 0}</TableCell>
+                    <TableCell>{log.FeedBatch?.batchName || 'N/A'}</TableCell>
+                    <TableCell>{log.feedBagsUsed || 0}</TableCell>
+                    <TableCell>{log.notes || '-'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

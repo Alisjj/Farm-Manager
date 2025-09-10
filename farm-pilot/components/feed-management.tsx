@@ -28,36 +28,30 @@ import {
   getFeedBatches,
   createFeedBatch,
   calculateFeedBatchCost,
+  getFeedBatchUsageStats,
   deleteFeedBatch,
 } from '@/lib/api';
+import { FeedBatch, Ingredient } from '@/types';
 
-interface Ingredient {
-  id?: number;
-  ingredientName: string;
-  quantityKg: number;
-  totalCost: number;
-  supplier?: string;
-  costPerKg?: number;
-}
-
-interface FeedBatch {
-  id: number;
-  batchDate: string;
+type BatchUsageStats = {
+  batchId: number;
   batchName: string;
-  totalQuantityTons: number;
-  bagSizeKg: number;
   totalBags: number;
-  totalCost: number;
+  bagsUsed: number;
+  remainingBags: number;
+  usagePercentage: number;
+  isNearlyEmpty: boolean;
+  isEmpty: boolean;
   costPerBag: number;
-  costPerKg: number;
-  ingredients?: Ingredient[];
-}
+  bagSizeKg: number;
+};
 
 export function FeedManagement() {
   const [showNewBatch, setShowNewBatch] = useState(false);
   const [batches, setBatches] = useState<FeedBatch[]>([]);
+  const [batchUsageStats, setBatchUsageStats] = useState<BatchUsageStats[]>([]);
   const [loading, setLoading] = useState(true);
-  const [costEstimate, setCostEstimate] = useState<any>(null);
+  const [costEstimate, setCostEstimate] = useState<Record<string, unknown> | null>(null);
 
   // Confirmation and notification state
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -93,11 +87,16 @@ export function FeedManagement() {
   const loadFeedData = async () => {
     try {
       setLoading(true);
-      const batchesResponse = await getFeedBatches();
+      const [batchesResponse, usageStatsResponse] = await Promise.all([
+        getFeedBatches(),
+        getFeedBatchUsageStats(),
+      ]);
       setBatches(batchesResponse?.data || []);
+      setBatchUsageStats(usageStatsResponse?.data || []);
     } catch (error) {
       console.error('Failed to load feed data:', error);
       setBatches([]);
+      setBatchUsageStats([]);
     } finally {
       setLoading(false);
     }
@@ -276,7 +275,7 @@ export function FeedManagement() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6 max-w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Feed Management</h1>
@@ -307,7 +306,7 @@ export function FeedManagement() {
               New Feed Batch
             </Button>
           </DialogTrigger>
-          <DialogContent className="w-[95vw] max-w-6xl h-[95vh] max-h-[95vh] overflow-y-auto p-4 sm:p-6">
+          <DialogContent className="w-[90vw] max-w-7xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader className="pb-4">
               <DialogTitle className="text-lg sm:text-xl">Create New Feed Batch</DialogTitle>
               <DialogDescription className="text-sm sm:text-base">
@@ -428,7 +427,6 @@ export function FeedManagement() {
                             className="text-red-600 hover:text-red-700 w-full"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Remove
                           </Button>
                         )}
                       </div>
@@ -537,75 +535,113 @@ export function FeedManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="min-w-[150px]">Batch Name</TableHead>
-                    <TableHead className="min-w-[100px]">Date</TableHead>
-                    <TableHead className="min-w-[120px]">Total Quantity</TableHead>
-                    <TableHead className="min-w-[100px]">Bags</TableHead>
-                    <TableHead className="min-w-[120px]">Total Cost</TableHead>
-                    <TableHead className="min-w-[100px]">Cost/Bag</TableHead>
-                    <TableHead className="min-w-[100px]">Cost/Kg</TableHead>
-                    <TableHead className="min-w-[200px]">Ingredients</TableHead>
-                    <TableHead className="min-w-[100px]">Actions</TableHead>
+                    <TableHead className="min-w-[140px]">Batch Name</TableHead>
+                    <TableHead className="min-w-[90px]">Date</TableHead>
+                    <TableHead className="min-w-[100px]">Total Quantity</TableHead>
+                    <TableHead className="min-w-[80px]">Total Bags</TableHead>
+                    <TableHead className="min-w-[90px]">Used/Remaining</TableHead>
+                    <TableHead className="min-w-[100px]">Usage %</TableHead>
+                    <TableHead className="min-w-[100px]">Total Cost</TableHead>
+                    <TableHead className="min-w-[80px]">Cost/Bag</TableHead>
+                    <TableHead className="min-w-[160px]">Ingredients</TableHead>
+                    <TableHead className="min-w-[80px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {batches.map((batch) => (
-                    <TableRow key={batch.id}>
-                      <TableCell className="font-medium">{batch.batchName}</TableCell>
-                      <TableCell className="text-sm">
-                        {new Date(batch.batchDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div className="font-medium">
-                            {Number(batch.totalQuantityTons).toFixed(2)} tons
+                  {batches.map((batch) => {
+                    const usageStats = batchUsageStats.find((stat) => stat.batchId === batch.id);
+                    return (
+                      <TableRow key={batch.id}>
+                        <TableCell className="font-medium">{batch.batchName}</TableCell>
+                        <TableCell className="text-sm">
+                          {new Date(batch.batchDate).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div className="font-medium">
+                              {Number(batch.totalQuantityTons).toFixed(2)} tons
+                            </div>
+                            <div className="text-muted-foreground text-xs">
+                              ({(Number(batch.totalQuantityTons) * 1000).toFixed(2)} kg)
+                            </div>
                           </div>
-                          <div className="text-muted-foreground text-xs">
-                            ({(Number(batch.totalQuantityTons) * 1000).toFixed(2)} kg)
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div className="font-medium">
+                              {Number(batch.totalBags).toFixed(2)} bags
+                            </div>
+                            <div className="text-muted-foreground text-xs">
+                              @ {Number(batch.bagSizeKg).toFixed(2)}kg each
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div className="font-medium">
-                            {Number(batch.totalBags).toFixed(2)} bags
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div className="font-medium">
+                              {usageStats?.bagsUsed ?? 0} /{' '}
+                              {usageStats?.remainingBags ?? batch.totalBags}
+                            </div>
+                            <div className="text-muted-foreground text-xs">Used / Remaining</div>
                           </div>
-                          <div className="text-muted-foreground text-xs">
-                            @ {Number(batch.bagSizeKg).toFixed(2)}kg each
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="text-sm font-medium">
+                              {usageStats?.usagePercentage ?? 0}%
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2 max-w-[60px]">
+                              <div
+                                className={`h-2 rounded-full transition-all ${
+                                  (usageStats?.usagePercentage ?? 0) > 90
+                                    ? 'bg-red-500'
+                                    : (usageStats?.usagePercentage ?? 0) > 70
+                                    ? 'bg-yellow-500'
+                                    : 'bg-green-500'
+                                }`}
+                                style={{
+                                  width: `${Math.min(usageStats?.usagePercentage ?? 0, 100)}%`,
+                                }}
+                              />
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(Number(batch.totalCost))}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {formatCurrency(Number(batch.costPerBag))}
-                      </TableCell>
-                      <TableCell className="text-sm font-medium">
-                        ₦{Number(batch.costPerKg).toFixed(2)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1 max-w-[200px]">
-                          {batch.ingredients?.map((ingredient, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {ingredient.ingredientName} (
-                              {Number(ingredient.quantityKg).toFixed(2)}kg)
-                            </Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          onClick={() => handleDeleteBatch(batch.id, batch.batchName)}
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700 hover:border-red-300"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {formatCurrency(Number(batch.totalCost))}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {formatCurrency(Number(batch.costPerBag))}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1 max-w-[200px]">
+                            {batch.ingredients?.map((ingredient, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {ingredient.ingredientName} (
+                                {Number(ingredient.quantityKg).toFixed(2)}kg)
+                              </Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {usageStats?.isNearlyEmpty && (
+                              <Badge variant="destructive" className="text-xs">
+                                Low Stock
+                              </Badge>
+                            )}
+                            <Button
+                              onClick={() => handleDeleteBatch(batch.id, batch.batchName)}
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 hover:border-red-300"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
