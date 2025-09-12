@@ -7,7 +7,8 @@ import customersRoutes from "./src/routes/customers.js";
 import salesRoutes from "./src/routes/sales.js";
 import feedRoutes from "./src/routes/feed.js";
 import costsRoutes from "./src/routes/costs.js";
-import laborRoutes from "./src/routes/labor.js";
+import costEntriesRoutes from "./src/routes/costEntries.js";
+// import laborRoutes from "./src/routes/labor.js"; // Disabled temporarily
 import reportsRoutes from "./src/routes/reports.js";
 import staffRoutes from "./src/routes/staff.js";
 import { autoMigrate } from "./src/utils/database.js";
@@ -36,7 +37,8 @@ app.use("/api/customers", customersRoutes);
 app.use("/api/sales", salesRoutes);
 app.use("/api/feed", feedRoutes);
 app.use("/api/costs", costsRoutes);
-app.use("/api", laborRoutes);
+app.use("/api/cost-entries", costEntriesRoutes);
+// app.use("/api", laborRoutes); // Disabled temporarily
 app.use("/api/reports", reportsRoutes);
 app.use("/api/staff", staffRoutes);
 

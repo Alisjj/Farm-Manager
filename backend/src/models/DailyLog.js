@@ -40,10 +40,6 @@ const DailyLog = sequelize.define("DailyLog", {
   feedBatchId: {
     type: DataTypes.INTEGER,
     allowNull: true,
-    references: {
-      model: "feed_batches",
-      key: "id",
-    },
   },
   feedBagsUsed: {
     type: DataTypes.DECIMAL(8, 2),

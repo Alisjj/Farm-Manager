@@ -20,7 +20,6 @@ import {
   createDailyLog,
   getHouses,
   getDailyLogs,
-  getLaborers,
   listStaff,
   getFeedBatches,
   getFeedBatchUsageStats,
@@ -225,10 +224,7 @@ export function DailyEntryForm() {
 
   const loadWorkers = async () => {
     try {
-      const [staffResponse, laborersResponse] = await Promise.all([
-        listStaff().catch(() => ({ data: [] })),
-        getLaborers().catch(() => ({ data: [] })),
-      ]);
+      const staffResponse = await listStaff().catch(() => ({ data: [] }));
 
       const staff = (staffResponse?.data || []).map(
         (s: { id: string; fullName?: string; username?: string }) => ({
@@ -239,18 +235,8 @@ export function DailyEntryForm() {
           tasks: [], // This would need to come from task assignment API
         })
       );
-
-      const laborers = (laborersResponse?.data || []).map(
-        (l: { id: string; name: string; role?: string }) => ({
-          id: String(l.id),
-          name: l.name,
-          role: l.role || 'Laborer',
-          status: 'present', // This would need to come from attendance API
-          tasks: [], // This would need to come from task assignment API
-        })
-      );
-
-      setWorkers([...staff, ...laborers]);
+      // Labor API is disabled; only include staff for now
+      setWorkers([...staff]);
     } catch (error) {
       console.error('Failed to load workers:', error);
     }

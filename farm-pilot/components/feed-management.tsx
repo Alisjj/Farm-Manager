@@ -435,7 +435,6 @@ export function FeedManagement() {
                 ))}
               </div>
 
-              {/* Cost Estimation */}
               <div className="space-y-4">
                 <Button onClick={calculateCost} variant="outline" className="w-full">
                   <Calculator className="h-4 w-4 mr-2" />

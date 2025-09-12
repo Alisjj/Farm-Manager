@@ -1,5 +1,6 @@
 import { validationResult } from "express-validator";
 import staffService from "../services/staffService.js";
+import logger from "../config/logger.js";
 
 const staffController = {
   listStaff: async (req, res, next) => {
@@ -17,8 +18,8 @@ const staffController = {
       if (!errors.isEmpty())
         return res.status(400).json({ errors: errors.array() });
 
-      const { username, password, fullName } = req.body;
-      const user = await staffService.create({ username, password, fullName });
+      const { username, password } = req.body;
+      const user = await staffService.create({ username, password });
       res.status(201).json({ success: true, data: user });
     } catch (err) {
       next(err);

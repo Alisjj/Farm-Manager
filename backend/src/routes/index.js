@@ -6,8 +6,9 @@ import houses from "./houses.js";
 import sales from "./sales.js";
 import customers from "./customers.js";
 import feed from "./feed.js";
-import labor from "./labor.js";
+// import labor from "./labor.js"; // Disabled temporarily
 import costs from "./costs.js";
+import costEntries from "./costEntries.js";
 import reports from "./reports.js";
 
 const router = express.Router();
@@ -19,8 +20,9 @@ router.use("/houses", houses);
 router.use("/sales", sales);
 router.use("/customers", customers);
 router.use("/feed", feed);
-router.use("/labor", labor);
+// router.use("/labor", labor); // Disabled temporarily
 router.use("/costs", costs);
+router.use("/cost-entries", costEntries);
 router.use("/reports", reports);
 
 export default router;

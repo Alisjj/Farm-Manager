@@ -26,21 +26,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUser = async (): Promise<boolean> => {
     if (fetchInFlight.current) {
-      try {
-        console.log('[auth] fetchUser skipped because already in-flight');
-      } catch {}
       return false;
     }
     fetchInFlight.current = true;
     setLoading(true);
     try {
-      try {
-        console.log('[auth] fetchUser start');
-      } catch {}
       const u = await getCurrentUser();
-      try {
-        console.log('[auth] fetchUser got', u);
-      } catch {}
       if (u) {
         setUser({
           id: String(u.id),
@@ -53,10 +44,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         return false;
       }
-    } catch (error) {
-      try {
-        console.log('[auth] fetchUser error', error);
-      } catch {}
+    } catch {
       setUser(null);
       return false;
     } finally {
@@ -66,25 +54,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Prevent multiple initializations
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
     fetchUser();
-    // subscribe to auth events so we react centrally
     const onLogin = () => void fetchUser();
     const onRefresh = () => void fetchUser();
     const onLogout = () => {
-      try {
-        console.log('[authEvents] logout received');
-      } catch {}
       setUser(null);
-      // Remove the automatic redirect to prevent loops
-      // The UI should handle showing login form when user is null
     };
-    try {
-      console.log('[auth] subscribing to authEvents');
-    } catch {}
+
     authEvents.on('login', onLogin);
     authEvents.on('refresh', onRefresh);
     authEvents.on('logout', onLogout);
@@ -98,7 +77,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleLogout = () => {
     apiLogout();
     setUser(null);
-    // Remove automatic redirect - let the UI handle showing login form
   };
 
   return (
