@@ -13,6 +13,7 @@ import {
   FeedBatch,
   Ingredient,
 } from '@/types';
+import { OperatingCost, CostEntry, CostFilters } from '@/types/entities/cost';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
@@ -24,13 +25,9 @@ function authHeader(): HeadersInit {
 async function tryRefreshToken(): Promise<boolean> {
   try {
     if (typeof window === 'undefined') return false;
-    try {
-      console.log('[api] tryRefreshToken start');
-    } catch {}
+
     const refresh = localStorage.getItem('fm_refresh');
-    try {
-      console.log('[api] fm_refresh present?', !!refresh);
-    } catch {}
+
     if (!refresh) return false;
     const res = await fetch(`${BASE}/api/auth/refresh`, {
       method: 'POST',
@@ -42,9 +39,6 @@ async function tryRefreshToken(): Promise<boolean> {
     const token = body?.token || body?.data?.token;
     if (token) {
       localStorage.setItem('fm_token', token);
-      try {
-        console.log('[api] tryRefreshToken stored new token');
-      } catch {}
       authEvents.emit('refresh');
       return true;
     }
@@ -245,19 +239,45 @@ export async function getCurrentUser() {
   }
 }
 
-// Staff
 export async function listStaff() {
   const res = await fetchWithAuth(`${BASE}/api/staff`);
   return handleResponse(res);
 }
 
-// Laborers
+export async function createStaff(payload: { username: string; password: string }) {
+  const res = await fetchWithAuth(`${BASE}/api/staff`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
+}
+
+export async function updateStaff(
+  id: number | string,
+  payload: { fullName?: string; password?: string; isActive?: boolean }
+) {
+  const res = await fetchWithAuth(`${BASE}/api/staff/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
+}
+
+export async function deleteStaff(id: number | string) {
+  const res = await fetchWithAuth(`${BASE}/api/staff/${id}`, { method: 'DELETE' });
+  return handleResponse(res);
+}
+
+// Labor API temporarily disabled
+/*
 export async function getLaborers() {
   const res = await fetchWithAuth(`${BASE}/api/labor`);
   return handleResponse(res);
 }
+*/
 
-// Sales
 export async function getSales(filters: Record<string, string> = {}) {
   const params = new URLSearchParams(filters);
   const res = await fetchWithAuth(`${BASE}/api/sales?${params}`);
@@ -396,5 +416,103 @@ export async function getFeedBatchUsageStats() {
 
 export async function getFeedBatchUsageById(id: string) {
   const res = await fetchWithAuth(`${BASE}/api/feed/batches/${id}/usage`);
+  return handleResponse(res);
+}
+
+export async function getDailyCosts(date: string) {
+  const res = await fetchWithAuth(`${BASE}/api/costs/daily/${date}`);
+  return handleResponse(res);
+}
+
+export async function getCostsSummary(start: string, end: string) {
+  const res = await fetchWithAuth(`${BASE}/api/costs/summary?start=${start}&end=${end}`);
+  return handleResponse(res);
+}
+
+export async function createOperatingCost(payload: Partial<OperatingCost>) {
+  const res = await fetchWithAuth(`${BASE}/api/costs/operating`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
+}
+
+export async function getEggPriceEstimate(date: string) {
+  const res = await fetchWithAuth(`${BASE}/api/costs/egg-price/${date}`);
+  return handleResponse(res);
+}
+
+export async function getDailyCalculation(date: string) {
+  const res = await fetchWithAuth(`${BASE}/api/costs/daily-calculation/${date}`);
+  return handleResponse(res);
+}
+
+export async function getAverageMonthlyProduction(date: string) {
+  const res = await fetchWithAuth(`${BASE}/api/costs/avg-production/${date}`);
+  return handleResponse(res);
+}
+
+// New flexible cost entries API
+export async function getCostTypes() {
+  const res = await fetchWithAuth(`${BASE}/api/cost-entries/types`);
+  return handleResponse(res);
+}
+
+export async function createCostEntry(payload: Partial<CostEntry>) {
+  const res = await fetchWithAuth(`${BASE}/api/cost-entries`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
+}
+
+export async function getCostEntries(filters: CostFilters = {}, page = 1, limit = 50) {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    ...Object.fromEntries(
+      Object.entries(filters)
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => [key, String(value)])
+    ),
+  });
+
+  const res = await fetchWithAuth(`${BASE}/api/cost-entries?${params}`);
+  return handleResponse(res);
+}
+
+export async function getCostEntry(id: number) {
+  const res = await fetchWithAuth(`${BASE}/api/cost-entries/${id}`);
+  return handleResponse(res);
+}
+
+export async function updateCostEntry(id: number, payload: Partial<CostEntry>) {
+  const res = await fetchWithAuth(`${BASE}/api/cost-entries/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
+}
+
+export async function deleteCostEntry(id: number) {
+  const res = await fetchWithAuth(`${BASE}/api/cost-entries/${id}`, {
+    method: 'DELETE',
+  });
+  return handleResponse(res);
+}
+
+export async function getCostEntriesSummary(filters: CostFilters = {}) {
+  const params = new URLSearchParams(
+    Object.fromEntries(
+      Object.entries(filters)
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => [key, String(value)])
+    )
+  );
+
+  const res = await fetchWithAuth(`${BASE}/api/cost-entries/summary?${params}`);
   return handleResponse(res);
 }

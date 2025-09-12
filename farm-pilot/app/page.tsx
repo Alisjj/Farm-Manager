@@ -14,7 +14,6 @@ import { useUser } from '@/context/UserContext';
 import {
   BarChart3,
   Egg,
-  Users,
   TrendingUp,
   Calendar,
   Package,
@@ -33,7 +32,6 @@ import { DashboardOverview } from '@/components/dashboard-overview';
 import { DailyEntryForm } from '@/components/daily-entry-form';
 import { SalesManagement } from '@/components/sales-management';
 import { FeedManagement } from '@/components/feed-management';
-import { LaborManagement } from '@/components/labor-management';
 import { CostAnalysis } from '@/components/cost-analysis';
 import { ReportsSection } from '@/components/reports-section';
 import { StaffDashboard } from '@/components/staff-dashboard';
@@ -204,7 +202,7 @@ function FarmPilotApp() {
     },
     { id: 'feed', label: 'Feed Management', icon: Package },
     { id: 'houses', label: 'House Management', icon: Egg },
-    { id: 'labor', label: 'Labor', icon: Users },
+    // Labor temporarily hidden
     { id: 'staff', label: 'Staff Management', icon: UserCheck },
     { id: 'expenses', label: 'Expenses', icon: Receipt },
     { id: 'costs', label: 'Cost Analysis', icon: TrendingUp },
@@ -223,8 +221,7 @@ function FarmPilotApp() {
         return <FeedManagement />;
       case 'houses':
         return <HouseManagement />;
-      case 'labor':
-        return <LaborManagement />;
+      // labor UI disabled
       case 'staff':
         return <StaffManagement />;
       case 'expenses':

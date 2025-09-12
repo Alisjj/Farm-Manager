@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import User from "../models/User.js";
 import { ROLES } from "../config/roles.js";
+import { BadRequestError, NotFoundError } from "../utils/exceptions.js";
 
 const staffService = {
   list: async () => {
@@ -10,9 +11,9 @@ const staffService = {
     });
   },
 
-  create: async ({ username, password, fullName }) => {
+  create: async ({ username, password }) => {
     const existing = await User.findOne({ where: { username } });
-    if (existing) throw new Error("Username already exists");
+    if (existing) throw new BadRequestError("Username already exists");
     const hash = await bcrypt.hash(password, 10);
     const user = await User.create({
       username,
@@ -28,11 +29,10 @@ const staffService = {
 
   update: async (id, payload) => {
     const user = await User.findByPk(id);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new NotFoundError("User not found");
     if (payload.password) {
       payload.password = await bcrypt.hash(payload.password, 10);
     }
-    // Remove fullName since it doesn't exist in the model
     delete payload.fullName;
     await user.update(payload);
     return {
@@ -44,7 +44,7 @@ const staffService = {
 
   remove: async (id) => {
     const user = await User.findByPk(id);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new NotFoundError("User not found");
     await user.destroy();
     return true;
   },

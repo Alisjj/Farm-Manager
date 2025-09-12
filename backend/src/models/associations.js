@@ -2,6 +2,8 @@ import FeedBatch from "./FeedBatch.js";
 import BatchIngredient from "./BatchIngredient.js";
 import House from "./House.js";
 import DailyLog from "./DailyLog.js";
+import CostEntry from "./CostEntry.js";
+import User from "./User.js";
 
 // Feed-related associations
 FeedBatch.hasMany(BatchIngredient, {
@@ -36,4 +38,25 @@ DailyLog.belongsTo(House, {
   as: "House",
 });
 
-export { FeedBatch, BatchIngredient, House, DailyLog };
+// CostEntry associations
+House.hasMany(CostEntry, {
+  foreignKey: "houseId",
+  as: "costEntries",
+});
+
+CostEntry.belongsTo(House, {
+  foreignKey: "houseId",
+  as: "house",
+});
+
+User.hasMany(CostEntry, {
+  foreignKey: "createdBy",
+  as: "costEntries",
+});
+
+CostEntry.belongsTo(User, {
+  foreignKey: "createdBy",
+  as: "creator",
+});
+
+export { FeedBatch, BatchIngredient, House, DailyLog, CostEntry, User };

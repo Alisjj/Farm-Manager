@@ -15,11 +15,7 @@ router.get("/", staffController.listStaff);
 
 router.post(
   "/",
-  [
-    body("username").notEmpty(),
-    body("password").isLength({ min: 6 }),
-    body("fullName").notEmpty(),
-  ],
+  [body("username").notEmpty(), body("password").isLength({ min: 5 })],
   staffController.createStaff
 );
 
