@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import logger from "../config/logger.js";
 
+const DATABASE_URL = process.env.DATABASE_URL;
 const DB_NAME = process.env.DB_NAME || "farm_manager";
 const DB_USER = process.env.DB_USER || "aliyusani";
 const DB_PASS = process.env.DB_PASS || "aliyusani";
@@ -12,7 +13,30 @@ const DB_DIALECT = process.env.DB_DIALECT || "postgres";
 const LOG_SQL = process.env.DB_LOG === "true" || false;
 
 let sequelize;
-if (DB_DIALECT === "sqlite") {
+
+// If DATABASE_URL is provided (Railway, Heroku, etc.), use it
+if (DATABASE_URL) {
+  sequelize = new Sequelize(DATABASE_URL, {
+    dialect: "postgres",
+    logging: LOG_SQL ? (msg) => logger.debug(`[SQL] ${msg}`) : false,
+    pool: {
+      max: 10,
+      min: 0,
+      acquire: 30000,
+      idle: 10000,
+    },
+    define: {
+      underscored: true,
+      timestamps: true,
+    },
+    dialectOptions: {
+      ssl: process.env.DB_SSL === "false" ? false : {
+        require: true,
+        rejectUnauthorized: false,
+      },
+    },
+  });
+} else if (DB_DIALECT === "sqlite") {
   const DB_STORAGE = process.env.DB_STORAGE || ":memory:";
   sequelize = new Sequelize({
     dialect: "sqlite",

@@ -13,7 +13,7 @@ import User from "./src/models/User.js";
     const admin = await User.create({
       username,
       password: hashedPassword,
-      role: "Owner",
+      role: "owner",
     });
 
     process.exit(0);
